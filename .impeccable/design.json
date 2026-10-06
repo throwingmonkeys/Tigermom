@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-06T17:42:26.7933441Z",
+  "title": "Design System: Tigermom",
+  "extensions": {
+    "colorMeta": {
+      "plum": { "role": "primary", "displayName": "Quiet Plum" },
+      "rose": { "role": "secondary", "displayName": "Soft Rose" },
+      "peach": { "role": "secondary", "displayName": "Warm Peach" },
+      "canvas": { "role": "neutral", "displayName": "Rose Paper" },
+      "deep": { "role": "neutral", "displayName": "Deep Plum Ink" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Welcome heading", "purpose": "Warm welcome heading using the self-hosted Bree Serif 400. Rendered appearance is unverified." },
+      "headline": { "displayName": "Panel heading", "purpose": "Start, authentication, and feedback titles." },
+      "body": { "displayName": "Conversation body", "purpose": "12px desktop, overridden to 14px at 700px and below." }
+    },
+    "shadows": [
+      { "name": "conversation", "value": "0 12px 42px #5430470c", "purpose": "Diffuse shadow beneath the conversation surface." }
+    ],
+    "motion": [
+      { "name": "primary-background", "value": "background .15s", "purpose": "Primary button hover." },
+      { "name": "navigation-drawer", "value": "transform .2s", "purpose": "Mobile sidebar opening and closing." },
+      { "name": "loading-spin", "value": "spin 1.3s linear infinite", "purpose": "Busy indicator." },
+      { "name": "reduced-motion", "value": "animation:none!important;transition:none!important;scroll-behavior:auto!important", "purpose": "Applied through prefers-reduced-motion:reduce." }
+    ],
+    "breakpoints": [
+      { "name": "wide-min", "value": "1550px" },
+      { "name": "compact-max", "value": "1200px" },
+      { "name": "narrow-max", "value": "1000px" },
+      { "name": "drawer-max", "value": "860px" },
+      { "name": "phone-max", "value": "700px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width primary action with visible keyboard focus.",
+      "html": "<button class=\"ds-primary\">Start your conversation</button>",
+      "css": ".ds-primary{font-family:Manrope,sans-serif;font-size:12px;font-weight:600;background:var(--plum,#543047);color:white;border:0;border-radius:9px;padding:15px 18px;min-height:48px;width:100%;cursor:pointer;transition:background .15s}.ds-primary:hover{background:#6d3e5b}.ds-primary:focus-visible{outline:3px solid var(--focus,#994976);outline-offset:4px}.ds-primary:disabled{opacity:.5;cursor:not-allowed}@media(max-width:700px){.ds-primary{font-size:13px}}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+    },
+    {
+      "name": "User Message",
+      "kind": "custom",
+      "refersTo": "user-message",
+      "description": "A woman's message, visually distinct from the assistant reply.",
+      "html": "<article class=\"ds-message\"><span>You</span><p>Help me understand my written report.</p></article>",
+      "css": ".ds-message{font-family:Manrope,sans-serif;color:var(--deep,#3c2936);padding:14px 16px;background:#f5edf2;border-radius:11px;margin-left:28px;font-size:12px;line-height:1.95}.ds-message span{font-size:10px;font-weight:700;color:#785b70;display:block;margin-bottom:8px}.ds-message p{margin:0}@media(max-width:700px){.ds-message{font-size:14px}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "A Midwife's Calm",
+    "overview": "The implementation follows empathy, plain language, and a woman's agency through muted plum, rose and peach accents, a soft canvas, and a white conversation surface. It presents an AI guide without implying clinical authority. This record is extracted from source; browser rendering, contrast, font appearance, responsive behavior, and formal visual approval remain unverified.",
+    "keyCharacteristics": ["Warm serif headings and restrained sans-serif controls", "A clear conversation surface with quiet supporting copy", "Tonal layering and a diffuse conversation shadow", "Phone-first conversation with a typing alternative"],
+    "rules": [],
+    "dos": ["Do preserve plain, calm copy and attributed sources.", "Do retain keyboard focus and reduced-motion support.", "Do verify phone layouts and small text in a browser."],
+    "donts": ["Don't imply clinical authority.", "Don't present the written sample as live AI output.", "Don't claim rendered visual approval without evidence."]
+  }
+}

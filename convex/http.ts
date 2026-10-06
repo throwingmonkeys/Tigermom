@@ -1,0 +1,11 @@
+import { httpRouter } from "convex/server";
+import { registerStaticRoutes } from "@convex-dev/static-hosting";
+import { components } from "./_generated/api";
+import { auth } from "./auth";
+import { upload, options } from "./reports";
+const http = httpRouter();
+auth.addHttpRoutes(http);
+http.route({ path: "/reports/upload", method: "POST", handler: upload });
+http.route({ path: "/reports/upload", method: "OPTIONS", handler: options });
+registerStaticRoutes(http, components.staticHosting);
+export default http;

@@ -40,7 +40,8 @@ export const begin = mutation({
   returns: v.id("sessions"),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Please verify your phone first.");
+    if (!userId)
+      throw new ConvexError("Please start a private guest session first.");
     const previous = await ctx.db
       .query("sessions")
       .withIndex("by_userId", (q) => q.eq("userId", userId))

@@ -23,9 +23,9 @@ Database, backend, sign-in, and website hosting use Convex. Git pushes do not de
 
 ## Current build
 
-Home, phone-code screens, conversation, source links, report controls, privacy, feedback, and coming-soon membership are implemented. A labelled, read-only sample is available without sign-in.
+Home, direct guest conversations, source links, report controls, privacy, feedback, and coming-soon membership are implemented. A labelled, read-only sample is also available.
 
-Convex Auth phone sign-in is wired and development signing keys are configured. No OTP bypass is included. SMS delivery is not connected. The phone provider awaits an owner-approved HTTPS adapter (`SMS_DELIVERY_URL` and `SMS_DELIVERY_SECRET` in Convex), which receives `{ phone, code, expiresInSeconds }` with a Bearer secret. Do not set an arbitrary endpoint. Choose the sender, implement its delivery rate limits and Indian sender requirements, then test a real round trip.
+The Start button quietly signs in through Convex Auth's anonymous provider. No phone number, code, or SMS sender is needed. Guest credentials stay in page memory; ownership checks still protect sessions and report uploads. A real development-cloud guest sign-in, report upload, unauthorized-access rejection, session cleanup, and sign-out have been verified with synthetic data.
 
 Convex Agent uses a stateless response pipeline, the Convex AI Gateway, restricted source search, and India-focused instructions. AI is disabled until the owner approves processing/costs and confirms gateway eligibility. `AI_MODEL` defaults to `openai/gpt-5`; `AI_ENABLED=true` enables the pipeline. Confirm support for web search and `store:false`, and provider data handling before enabling it. No AI request has been tested. Citations and instructions alone cannot guarantee medical accuracy; check actual answers with reliable sources and human review.
 
@@ -41,9 +41,9 @@ npm run build
 npm run check:cloud
 ```
 
-Eight automated checks cover session/file deletion, access isolation, expiry, unsigned upload rejection, trusted-link validation, sample sources, phone gating, and a simulated conversation/end/feedback flow. Build compiles TypeScript and the frontend. Cloud checks test the actual development deployment's access rejection and public signing-key endpoint.
+Eight automated checks cover session/file deletion, access isolation, expiry, unsigned upload rejection, trusted-link validation, sample sources, code-free guest startup, and a simulated conversation/end/feedback flow. Build compiles TypeScript and the frontend. Cloud checks also exercise real guest sign-in, report upload, cleanup, and sign-out.
 
-Screen tests use a simulated page and mocked service calls, not a real browser. The browser tool reported no connected browsers. Desktop/mobile appearance, real OTP, real AI, and voice remain unverified. The design reviewer returned `recapture` pending desktop/mobile screenshots.
+Screen tests use a simulated page and mocked service calls, not a real browser. The browser tool reported no connected browsers. Desktop/mobile appearance, real AI, and voice remain unverified. The design reviewer returned `recapture` pending desktop/mobile screenshots.
 
 On this machine, npm/Convex network commands may need `$env:NODE_USE_SYSTEM_CA='1'` to use Windows' trusted certificates. Certificate verification remains enabled. `npm run setup:auth` preserves existing signing keys, generates missing ones without printing or saving private keys, and sets the development `SITE_URL`.
 

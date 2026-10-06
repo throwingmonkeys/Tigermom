@@ -151,7 +151,7 @@ The white conversation surface has 16px corners and clips overflow. Its header u
 
 ### Inputs / Fields
 
-Phone and code fields use a `#cbbac5` border, 9px corners, and 50px minimum height. The composer uses `composer`, `composer-border`, and 11px corners. Its textarea ranges from 66px minimum to 150px maximum height and supports resizing. Attachment, microphone, and send controls remain below it. Voice consent appears before browser speech input. Reports appear as removable text chips.
+The Start button opens a guest conversation directly; no phone or code fields appear in v1. The composer uses `composer`, `composer-border`, and 11px corners. Its textarea ranges from 66px minimum to 150px maximum height and supports resizing. Attachment, microphone, and send controls remain below it. Voice consent appears before browser speech input. Reports appear as removable text chips.
 
 ### Navigation
 

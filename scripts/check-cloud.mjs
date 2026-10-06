@@ -33,3 +33,46 @@ const keys = await fetch(`${site}/.well-known/jwks.json`);
 if (!keys.ok || !(await keys.json()).keys?.length)
   throw new Error("Public signing keys are unavailable.");
 console.log("Public auth keys served correctly.");
+
+const guest = new ConvexHttpClient(url);
+const result = await guest.action(api.auth.signIn, { provider: "anonymous" });
+if (!result.tokens?.token)
+  throw new Error("Guest sign-in did not return a session.");
+guest.setAuth(result.tokens.token);
+let sessionId;
+try {
+  sessionId = await guest.mutation(api.sessions.begin, {});
+  console.log("Guest conversation started without a phone number or code.");
+  const uploaded = await fetch(`${site}/reports/upload`, {
+    method: "POST",
+    headers: {
+      Origin: "http://127.0.0.1:5173",
+      Authorization: `Bearer ${result.tokens.token}`,
+      "Content-Type": "application/pdf",
+      "X-Session-Id": sessionId,
+      "X-Report-Name": "synthetic-test.pdf",
+    },
+    body: "%PDF-1.4\nSynthetic test fixture; no medical information.\n%%EOF",
+  });
+  if (!uploaded.ok)
+    throw new Error(
+      `Guest report upload failed with status ${uploaded.status}.`,
+    );
+  const { id: reportId } = await uploaded.json();
+  console.log("Synthetic report uploaded inside the guest's private session.");
+  let blocked = false;
+  try {
+    await client.mutation(api.reports.remove, { reportId });
+  } catch {
+    blocked = true;
+  }
+  if (!blocked)
+    throw new Error("An unsigned client could delete a guest report.");
+  await guest.mutation(api.sessions.finish, { sessionId });
+  console.log("Guest conversation ended and its report cleanup completed.");
+  sessionId = undefined;
+} finally {
+  if (sessionId) await guest.mutation(api.sessions.finish, { sessionId });
+  await guest.action(api.auth.signOut, {});
+  console.log("Guest signed out; no credentials printed.");
+}

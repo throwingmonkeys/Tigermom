@@ -16,9 +16,20 @@ if (!url)
     "Set VITE_CONVEX_URL in .env.local before starting Tigermom.",
   );
 const client = new ConvexReactClient(url);
+// A guest's sign-in keys stay in this page's memory, not localStorage.
+const guestKeys = new Map<string, string>();
+const guestStorage = {
+  getItem: (key: string) => guestKeys.get(key) ?? null,
+  setItem: (key: string, value: string) => {
+    guestKeys.set(key, value);
+  },
+  removeItem: (key: string) => {
+    guestKeys.delete(key);
+  },
+};
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ConvexAuthProvider client={client}>
+    <ConvexAuthProvider client={client} storage={guestStorage}>
       <App />
     </ConvexAuthProvider>
   </React.StrictMode>,

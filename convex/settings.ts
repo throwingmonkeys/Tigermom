@@ -4,9 +4,7 @@ export const availability = query({
   args: {},
   returns: v.object({ sms: v.boolean(), ai: v.boolean() }),
   handler: async () => ({
-    sms: Boolean(
-      process.env.SMS_DELIVERY_URL && process.env.SMS_DELIVERY_SECRET,
-    ),
+    sms: false,
     ai: Boolean(process.env.AI_ENABLED === "true"),
   }),
 });

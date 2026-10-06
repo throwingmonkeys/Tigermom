@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import { useAction, useConvexAuth, useMutation } from "convex/react";
 import { useAuthActions, useAuthToken } from "@convex-dev/auth/react";
 import {
   ArrowRight,
   AudioLines,
   BookOpen,
   Check,
-  ChevronDown,
   ChevronRight,
   FileText,
   Heart,
@@ -90,7 +95,6 @@ function Paragraphs({ text }: { text: string }) {
 export default function App() {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn, signOut } = useAuthActions();
-  const availability = useQuery(api.settings.availability);
   const ask = useAction(api.conversation.reply);
   const begin = useMutation(api.sessions.begin);
   const heartbeat = useMutation(api.sessions.heartbeat);
@@ -98,10 +102,8 @@ export default function App() {
   const authToken = useAuthToken();
   const removeReport = useMutation(api.reports.remove);
   const [panel, setPanel] = useState<
-    "home" | "phone" | "code" | "chat" | "example" | "feedback" | "thanks"
+    "home" | "chat" | "example" | "feedback" | "thanks"
   >("home");
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<Id<"sessions"> | null>(null);
@@ -111,6 +113,8 @@ export default function App() {
   const [error, setError] = useState("");
   const [menu, setMenu] = useState(false);
   const [expired, setExpired] = useState(false);
+  const [pendingStart, setPendingStart] = useState(false);
+  const opening = useRef(false);
   const [info, setInfo] = useState<"sources" | "privacy" | "membership" | null>(
     null,
   );
@@ -123,7 +127,6 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<Id<"sessions"> | null>(null);
-  const fullPhone = `+91${phone.replace(/\D/g, "")}`;
   const active = panel === "chat" || panel === "example";
   useEffect(() => {
     sessionRef.current = sessionId;
@@ -184,14 +187,9 @@ export default function App() {
         : fallback,
     );
   }
-  async function start(prompt?: string) {
-    setError("");
-    setExpired(false);
-    if (prompt) setDraft(prompt);
-    if (!isAuthenticated) {
-      setPanel("phone");
-      return;
-    }
+  const openConversation = useCallback(async () => {
+    if (opening.current) return;
+    opening.current = true;
     setBusy(true);
     try {
       const id = await begin({});
@@ -200,53 +198,33 @@ export default function App() {
       setReports([]);
       setPanel("chat");
     } catch (e) {
-      showError(e, "The conversation could not start. Please try again.");
+      setError("The conversation could not start. Please try again.");
     } finally {
       setBusy(false);
+      opening.current = false;
     }
-  }
-  async function sendCode(e: FormEvent) {
-    e.preventDefault();
+  }, [begin]);
+  useEffect(() => {
+    if (!pendingStart || !isAuthenticated) return;
+    setPendingStart(false);
+    void openConversation();
+  }, [pendingStart, isAuthenticated, openConversation]);
+  async function start(prompt?: string) {
     setError("");
-    if (!/^[6-9]\d{9}$/.test(phone.replace(/\D/g, ""))) {
-      setError("Enter a valid 10-digit Indian mobile number.");
-      return;
-    }
-    if (!availability?.sms) {
-      setError(
-        "Phone verification is being set up. No code has been sent. You can explore the sample conversation below.",
-      );
+    setExpired(false);
+    if (prompt) setDraft(prompt);
+    if (isAuthenticated) {
+      await openConversation();
       return;
     }
     setBusy(true);
+    setPendingStart(true);
     try {
-      await signIn("phone", { phone: fullPhone });
-      setPanel("code");
-    } catch (e) {
-      showError(
-        e,
-        "We could not send the code. Check your number and try again.",
-      );
-    } finally {
+      await signIn("anonymous");
+    } catch {
+      setPendingStart(false);
       setBusy(false);
-    }
-  }
-  async function verify(e: FormEvent) {
-    e.preventDefault();
-    setError("");
-    setBusy(true);
-    try {
-      await signIn("phone", { phone: fullPhone, code });
-      const id = await begin({});
-      setSessionId(id);
-      setPanel("chat");
-    } catch (e) {
-      showError(
-        e,
-        "That code could not be verified. Check it or request a new code.",
-      );
-    } finally {
-      setBusy(false);
+      setError("Your private session could not start. Please try again.");
     }
   }
   async function send(e: FormEvent) {
@@ -551,8 +529,8 @@ export default function App() {
                 <div className="prose">
                   <h3>What we keep</h3>
                   <p>
-                    Your verified phone number and sign-in records are held in
-                    Convex to provide secure access. They are separate from your
+                    No phone number or verification code is needed. Convex keeps
+                    a guest sign-in record to protect access to your temporary
                     conversation.
                   </p>
                   <h3>What we delete</h3>
@@ -568,9 +546,9 @@ export default function App() {
                   <p>
                     Convex runs the app. Once connected, the configured AI
                     service will process your questions and any reports you
-                    choose to attach. Phone codes use an SMS delivery service.
-                    Provider setup and its data handling must be confirmed
-                    before real use.
+                    choose to attach. No SMS service is used in this first
+                    version. Provider setup and its data handling must be
+                    confirmed before real use.
                   </p>
                   <h3>Your voice</h3>
                   <p>
@@ -721,113 +699,6 @@ export default function App() {
                       Read a sample conversation <ArrowRight size={14} />
                     </button>
                   </div>
-                </div>
-              )}
-              {(panel === "phone" || panel === "code") && (
-                <div className="auth-content">
-                  <button
-                    className="text-button"
-                    onClick={() => {
-                      setPanel("home");
-                      setError("");
-                    }}
-                  >
-                    Back
-                  </button>
-                  <div className="auth-symbol">
-                    <LockKeyhole size={25} />
-                  </div>
-                  <h2>
-                    {panel === "phone"
-                      ? "Let’s start with you."
-                      : "Check your phone."}
-                  </h2>
-                  <p>
-                    {panel === "phone"
-                      ? "Verify your mobile number before we talk. Your free conversation won’t become a saved history."
-                      : `Enter the 6-digit code sent to ${fullPhone}.`}
-                  </p>
-                  <form onSubmit={panel === "phone" ? sendCode : verify}>
-                    {panel === "phone" ? (
-                      <>
-                        <label htmlFor="phone">Mobile number</label>
-                        <div className="phone-input">
-                          <span>
-                            +91 <ChevronDown size={13} />
-                          </span>
-                          <input
-                            id="phone"
-                            type="tel"
-                            inputMode="numeric"
-                            autoComplete="tel-national"
-                            placeholder="Your 10-digit number"
-                            value={phone}
-                            onChange={(e) =>
-                              setPhone(
-                                e.target.value.replace(/\D/g, "").slice(0, 10),
-                              )
-                            }
-                            required
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <label htmlFor="code">Verification code</label>
-                        <input
-                          className="code-input"
-                          id="code"
-                          inputMode="numeric"
-                          autoComplete="one-time-code"
-                          pattern="[0-9]{6}"
-                          placeholder="6-digit code"
-                          value={code}
-                          onChange={(e) =>
-                            setCode(
-                              e.target.value.replace(/\D/g, "").slice(0, 6),
-                            )
-                          }
-                          required
-                        />
-                      </>
-                    )}
-                    <button
-                      className="primary-button"
-                      disabled={
-                        busy ||
-                        (panel === "phone" && availability === undefined)
-                      }
-                    >
-                      {busy ? (
-                        <LoaderCircle className="spin" size={18} />
-                      ) : null}
-                      {panel === "phone"
-                        ? "Send verification code"
-                        : "Verify and start"}
-                      <ArrowRight size={17} />
-                    </button>
-                  </form>
-                  {panel === "code" && (
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        setPanel("phone");
-                        setCode("");
-                        setError("");
-                      }}
-                    >
-                      Change number or request a new code
-                    </button>
-                  )}
-                  <button
-                    className="text-button sample-link"
-                    onClick={() => {
-                      setPanel("example");
-                      setError("");
-                    }}
-                  >
-                    Explore the sample conversation
-                  </button>
                 </div>
               )}
               {active && (

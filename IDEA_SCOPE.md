@@ -32,7 +32,7 @@ These decisions define v1 and take precedence over the broader future-product id
 - First user: a 28-year-old woman in Bengaluru, eight weeks into her first pregnancy, feeling overwhelmed after her first doctor's appointment. This is the starting example, not an age restriction.
 - Core result: help her understand her doctor's advice and leave with three clear questions for her next visit.
 - Conversation: spoken conversation, with a typing option when she cannot speak privately. Designed for use on a phone.
-- Before conversation: collect her phone number and verify it with a one-time code (OTP).
+- Before conversation: no phone number or one-time code in v1. The Start button quietly opens a private guest session through Convex Auth. No sign-in form is shown.
 - Reports are core: she can start with or without a medical report. Accept PDFs and photos of printed reports. Explain written reports, not interpret medical scan images.
 - Free-session privacy: delete uploaded reports and conversation content when the session ends. Do not keep conversation history or track her interactions as a free user. Phone verification is separate from conversation history.
 - Membership: show "Paid membership coming soon" initially; do not accept payments in v1. Saved reports and conversation history will be the first paid benefits when membership launches, and only paid users will have that history retained.
@@ -59,11 +59,11 @@ VOICE PRINCIPLES
 
 Onboarding (how a first-time user feels the value fastest):
 The pregnant woman has arrived because she wants to become a tiger mom. Tiger moms are not born. They are created. The onboarding welcomes her with a question “Hi, I’m Tigermom- an AI personal agent to help you make the right moves for you and your baby.
-Do you want to ask me anything? Enter your phone number, box, otp, Start conversation. Upload report button next to start button allows user to upload medical reports that the AI will help the user understand.
+Do you want to ask me anything? Start conversation directly, without a phone number or code. An upload report button allows the user to attach written medical reports for Tigermom to help her understand.
 Tigermom introduces herself and that she’s here to prepare you become a Tigermom too- informed, prepared and confident about your pregnancy, birth and baby.
 Tigermom says her answers are grounded in medical guidance from sources such as ACOG and FOGSI/ICOG, together with evidence-based childbirth education. Tigermom says she’s not here to replace your doctor or what to do. Tigermom is here to make sure you’re informed and prepared enough to make the best choices for yourself and your baby.
 The core loop (user stories, written by me):
-User lands on home page, enters phone number and OTP when she receives it.
+User lands on the home page and starts a private guest conversation directly.
 Uploads medical report and Starts her conversation with Tigermom. 
 Ends her conversation with Tigermom
 Answers a question: Was that conversation useful to you? Y/N. Chooses from a list of 4 options which explain why

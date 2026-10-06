@@ -9,11 +9,12 @@ The interface and Convex foundation are implemented. The app runs at http://127.
 - Eight automated checks pass.
 - Real cloud rejects unsigned session creation and report upload; auth signing-key endpoint works.
 - No conversation-history table or browser persistence was added. Free-session report cleanup is tested.
+- Guest sign-in, synthetic report upload, unauthorized-access rejection, cleanup, and sign-out work against the real cloud. No phone number or code is collected; no SMS service is needed.
 
 ## Remaining
 
-1. Owner decision about SMS and AI providers/account costs. OpenAI/Twilio approval question is pending; do not infer consent.
-2. Configure and rate-limit SMS delivery; verify a real phone code without a production bypass.
+1. Owner decision about AI processing and account costs remains pending; do not infer consent. SMS and Twilio are no longer needed for v1.
+2. Check the code-free guest flow in a connected browser. Automated screen checks and the cloud guest round trip pass.
 3. Confirm Convex AI Gateway eligibility, supported web-search model, report input, and provider privacy settings; enable only after approval and test actual responses.
 4. Human/source checks for medical claims, Indian context, urgent concerns, missing evidence, unreadable reports, and tone, alongside founder testing.
 5. Connect a browser and capture desktop/mobile screenshots. Review returned `recapture`; no visual approval.

@@ -91,7 +91,7 @@ export const upload = httpAction(async (ctx, request) => {
   const respond = (value: object, status = 200) =>
     new Response(JSON.stringify(value), { status, headers });
   if (!(await getAuthUserId(ctx)))
-    return respond({ error: "Verify your phone first." }, 401);
+    return respond({ error: "Start a private guest conversation first." }, 401);
   const sessionId = request.headers.get("X-Session-Id") as Id<"sessions">;
   const name = decodeURIComponent(
     request.headers.get("X-Report-Name") ?? "Report",

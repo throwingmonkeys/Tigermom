@@ -20,7 +20,7 @@ Help a woman understand her doctor's advice or written reports, feel supported, 
 
 ## Capabilities and Constraints
 
-Voice or typing; phone OTP before conversation; optional PDF or report photo. Free conversation and report content deleted at session end. Paid membership coming soon, without payments. Future membership saves reports and history. No appointment booking, WhatsApp, or diet tracking in v1. AI and SMS services require user approval and account configuration; not yet connected.
+Voice or typing; a private guest session opens from the Start button with no phone number or code; optional PDF or report photo. Free conversation and report content deleted at session end. Guest sign-in keys stay in page memory. Paid membership coming soon, without payments. Future membership saves reports and history. No appointment booking, WhatsApp, or diet tracking in v1. AI processing/costs require user approval and configuration; not yet connected. No SMS service is needed.
 
 ## Brand Commitments
 

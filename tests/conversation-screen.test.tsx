@@ -72,28 +72,23 @@ describe("Conversation screens", () => {
     await user.click(screen.getByRole("button", { name: "Our sources" }));
     expect(screen.getByRole("link", { name: /FOGSI/ })).toBeDefined();
   });
-  it("requires a valid phone and never claims an unconfigured code was sent", async () => {
+  it("starts a private guest conversation without asking for a phone or code", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    state.signIn.mockResolvedValue({ signingIn: true });
+    const { rerender } = render(<App />);
     await user.click(
       screen.getByRole("button", { name: /Start a conversation/ }),
     );
-    const phone = screen.getByLabelText("Mobile number");
-    await user.type(phone, "1234567890");
-    await user.click(
-      screen.getByRole("button", { name: /Send verification code/ }),
-    );
-    expect(screen.getByRole("alert").textContent).toContain("valid 10-digit");
-    await user.clear(phone);
-    await user.type(phone, "9876543210");
-    await user.click(
-      screen.getByRole("button", { name: /Send verification code/ }),
-    );
-    expect(screen.getByRole("alert").textContent).toContain(
-      "No code has been sent",
-    );
-    expect(state.signIn).not.toHaveBeenCalled();
     expect(state.begin).not.toHaveBeenCalled();
+    state.authenticated = true;
+    rerender(<App />);
+    expect(
+      await screen.findByRole("textbox", { name: "Your question" }),
+    ).toBeDefined();
+    expect(state.signIn).toHaveBeenCalledWith("anonymous");
+    expect(state.begin).toHaveBeenCalledWith({});
+    expect(screen.queryByLabelText("Mobile number")).toBeNull();
+    expect(screen.queryByLabelText("Verification code")).toBeNull();
   });
   it("shows an answer and sources, then ends and clears a temporary conversation", async () => {
     state.authenticated = true;

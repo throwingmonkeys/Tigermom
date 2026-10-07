@@ -44,9 +44,9 @@ const referenceSources = [
   { title: "Ina May Gaskin", description: "Clearly attributed childbirth perspectives", url: "https://inamay.com/" },
 ];
 const starters = [
-  "Help me understand my doctor's advice",
-  "I have a question about my report",
-  "Help me prepare for my next appointment",
+  "What does my doctor's advice mean for my choices?",
+  "Can you help me understand my report?",
+  "What should I ask at my next appointment?",
 ];
 const example: Message[] = [
   {
@@ -665,12 +665,6 @@ export default function App() {
                   provider is here to care for you.
                 </p>
               </div>
-              {panel === "home" && (
-                <section className="community-note" aria-label="Community stories">
-                  <h2>Other voices, shared with care.</h2>
-                  <p>Anonymous stories will appear here once women choose to share their feedback. No testimonials have been published yet.</p>
-                </section>
-              )}
             </section>
             <section
               className="conversation-column"
@@ -823,7 +817,7 @@ export default function App() {
                         className="primary-button"
                         onClick={() => void start()}
                       >
-                        Start your conversation <ArrowRight size={17} />
+                        Talk to Tigermom <ArrowRight size={17} />
                       </button>
                       <button
                         className="text-button"
@@ -920,7 +914,7 @@ export default function App() {
                           <button
                             type="button"
                             className="icon-button"
-                            aria-label="Attach medical report"
+                            aria-label="Upload report"
                             disabled={uploading || busy || expired || reports.length >= 3}
                             onClick={() => fileInput.current?.click()}
                           >
@@ -929,10 +923,8 @@ export default function App() {
                             ) : (
                               <Paperclip size={19} />
                             )}
+                            <span>Upload report</span>
                           </button>
-                          <span className="attachment-hint">
-                            PDF or report photo
-                          </span>
                           <button
                             type="button"
                             className={`icon-button mic-button ${listening ? "listening" : ""}`}
@@ -1035,7 +1027,7 @@ export default function App() {
               {panel === "thanks" && (
                 <div className="feedback-content">
                   <Heart size={32} className="thank-heart" />
-                  <h2>Sources you can explore.</h2>
+                  <h2>Sources</h2>
                   <p>Your conversation is cleared. These reference sources are here whenever you want to learn more.</p>
                   <div className="source-list">
                     {referenceSources.map((source) => (
@@ -1067,7 +1059,7 @@ export default function App() {
                         className="text-button"
                         onClick={() => void start()}
                       >
-                        Start a new conversation
+                        Talk to Tigermom
                       </button>
                     )}
                   </div>
@@ -1088,6 +1080,21 @@ export default function App() {
                 </button>
               </div>
             </section>
+            {panel === "home" && (
+              <section className="testimonials" aria-labelledby="testimonials-title">
+                <h2 id="testimonials-title">From other Tigermoms</h2>
+                <p>Real experiences, shared anonymously and with permission.</p>
+                <div className="testimonial-tiles">
+                  {["Understanding advice", "Making sense of a report", "Preparing questions"].map((topic) => (
+                    <article className="testimonial-tile" key={topic} aria-label={`${topic} testimonial placeholder`}>
+                      <h3>{topic}</h3>
+                      <p>Testimonial coming soon</p>
+                      <span>No real quote has been added yet.</span>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
         <footer className="page-footer">

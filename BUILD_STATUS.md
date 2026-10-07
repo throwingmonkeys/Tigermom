@@ -6,14 +6,14 @@ The interface and Convex foundation are implemented. The app runs at http://127.
 
 - Development Convex backend compiles and pushes.
 - Frontend compiles and builds.
-- Fifteen automated checks pass, including the fixed ten-minute limit, late replies, server-expiry cleanup, paused AI, simulated speech, and cancelled startup.
+- Sixteen automated checks pass, including the fixed ten-minute limit, late replies, server-expiry cleanup, paused AI, simulated speech, and cancelled startup.
 - Real cloud rejects unsigned session creation and report upload; auth signing-key endpoint works.
 - No conversation-history table or browser persistence was added. Free-session report cleanup is tested.
 - Guest sign-in, synthetic report upload, unauthorized-access rejection, cleanup, and sign-out work against the real cloud. No phone number or code is collected; no SMS service is needed.
 - Updated v1 flow: ten-minute countdown, automatic end and deletion, private feedback followed by curated reference sources. Plans and membership UI are reserved for v2.
 - AI stays disabled, confirmed by the real development-cloud settings query. The app labels this pause and blocks AI submissions.
 - Spoken input sends after consent; spoken replies can be switched off. These paths are checked with simulated speech, not a real microphone or speaker.
-- Community testimonials are visibly pending until real, permissioned feedback is available.
+- Three testimonial tiles are visibly marked as placeholders until real, permissioned feedback is available. Button labels follow PRODUCT.md, including the sample conversation start action.
 
 ## Remaining
 

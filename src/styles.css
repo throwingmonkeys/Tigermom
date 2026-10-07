@@ -25,9 +25,18 @@
 .session-timer { font-variant-numeric: tabular-nums; color: var(--plum); font-weight: 700; }
 .spoken-replies { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; }
 .spoken-replies input { accent-color: var(--plum); width: 17px; height: 17px; }
-.community-note { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
-.community-note h2 { font-size: 16px; margin: 0 0 8px; }
-.community-note p { font-size: 13px; line-height: 1.8; color: var(--muted); margin: 0; }
+.testimonials { grid-column: 1 / -1; margin-top: 12px; }
+.testimonials > h2 { font-family: "Bree Serif", serif; font-size: 27px; font-weight: 400; margin: 0 0 8px; }
+.testimonials > p { color: var(--muted); font-size: 14px; line-height: 1.8; margin: 0 0 20px; }
+.testimonial-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.testimonial-tile { padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--white); }
+.testimonial-tile h3 { font-size: 16px; margin: 0 0 20px; }
+.testimonial-tile p { font-size: 14px; line-height: 1.8; margin: 0 0 8px; }
+.testimonial-tile span { display: block; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.composer-controls > .icon-button:has(span) { width: auto; gap: 7px; padding-inline: 8px; font-size: 12px; }
+@media (max-width: 700px) {
+  .testimonial-tiles { grid-template-columns: 1fr; }
+}
 .service-note { font-size: 12px; line-height: 1.7; color: var(--plum); margin: 12px 0; }
 .feedback-content .source-list { text-align: left; margin: 24px 0; }
 * {

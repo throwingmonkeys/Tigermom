@@ -64,6 +64,16 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); delete window.SpeechRecognition; });
 describe("Conversation screens", () => {
+  it("shows testimonial tiles honestly and uses the requested start label", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    expect(screen.getAllByRole("article", { name: /testimonial placeholder/ })).toHaveLength(3);
+    expect(screen.getAllByText("Testimonial coming soon")).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "Talk to Tigermom" })).toBeDefined();
+    await user.click(screen.getByRole("button", { name: /Read a sample conversation/ }));
+    expect(screen.getByRole("button", { name: "Talk to Tigermom" })).toBeDefined();
+    expect(screen.queryByRole("button", { name: /Start your conversation/ })).toBeNull();
+  });
   it("labels the sample and offers sources without pretending to run AI", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -130,7 +140,7 @@ describe("Conversation screens", () => {
       "I feel clearer",
     );
     await user.click(screen.getByRole("button", { name: /Continue to sources/ }));
-    expect(screen.getByText("Sources you can explore.")).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Sources" })).toBeDefined();
     expect(screen.getByRole("link", { name: /FOGSI/ })).toBeDefined();
     expect(screen.queryByText(/Membership will/)).toBeNull();
   });

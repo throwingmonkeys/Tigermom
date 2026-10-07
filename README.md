@@ -25,7 +25,7 @@ Database, backend, sign-in, and website hosting use Convex. Git pushes do not de
 
 Home, direct guest conversations, source links, report controls, privacy, and feedback are implemented. A labelled, read-only sample is also available. The updated v1 flow offers ten free minutes, then deletes temporary reports and clears conversation text, asks for private feedback, and shows curated reference sources. Membership, trials, saved history, and payments are reserved for v2.
 
-Live AI remains paused and is labelled on screen. When AI is enabled later, spoken questions send after voice consent and replies read aloud by default, with a switch for quiet use. Local device voices are preferred; an English female voice is selected when a recognizable one is available. Voice availability and gender cannot be guaranteed across devices. The community area honestly says testimonials are pending; no quotes were invented.
+Live AI remains paused and is labelled on screen. When AI is enabled later, spoken questions send after voice consent and replies read aloud by default, with a switch for quiet use. Local device voices are preferred; an English female voice is selected when a recognizable one is available. Voice availability and gender cannot be guaranteed across devices. Three testimonial tiles are labelled as pending until real quotes and permission are supplied; no quotes were invented. Start buttons consistently say “Talk to Tigermom”; the report action says “Upload report” and the end action says “End conversation”.
 
 The Start button quietly signs in through Convex Auth's anonymous provider. No phone number, code, or SMS sender is needed. Guest credentials stay in page memory; ownership checks still protect sessions and report uploads. A real development-cloud guest sign-in, report upload, unauthorized-access rejection, session cleanup, and sign-out have been verified with synthetic data.
 
@@ -43,7 +43,7 @@ npm run build
 npm run check:cloud
 ```
 
-Fifteen automated checks cover session/file deletion, access isolation, fixed ten-minute expiry, unsigned upload rejection, trusted links, sample sources, guest startup, paused AI, simulated voice input/output, clearing content on server expiry, ignoring late replies, and cancelling startup after leaving the page. Build compiles TypeScript and the frontend. Cloud checks also exercise real guest sign-in, report upload, cleanup, and sign-out.
+Sixteen automated checks cover session/file deletion, access isolation, fixed ten-minute expiry, unsigned upload rejection, trusted links, sample sources, guest startup, paused AI, simulated voice input/output, clearing content on server expiry, ignoring late replies, and cancelling startup after leaving the page. Build compiles TypeScript and the frontend. Cloud checks also exercise real guest sign-in, report upload, cleanup, and sign-out.
 
 Screen tests use a simulated page and mocked service calls, not a real browser. The browser tool reported no connected browsers. Desktop/mobile appearance, real AI, and voice remain unverified. The design reviewer returned `recapture` pending desktop/mobile screenshots.
 

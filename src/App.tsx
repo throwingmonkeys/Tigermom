@@ -5,7 +5,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { useAction, useConvexAuth, useMutation } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useAuthActions, useAuthToken } from "@convex-dev/auth/react";
 import {
   ArrowRight,
@@ -36,6 +36,13 @@ import type { Id } from "../convex/_generated/dataModel";
 type Source = { title: string; url: string };
 type Message = { role: "user" | "assistant"; text: string; sources?: Source[] };
 type Report = { id: Id<"reports">; name: string };
+const SESSION_LENGTH = 10 * 60_000;
+const referenceSources = [
+  { title: "FOGSI", description: "Indian obstetric and gynaecological guidance", url: "https://www.fogsi.org/" },
+  { title: "ACOG", description: "Pregnancy guidance from obstetric specialists", url: "https://www.acog.org/womens-health" },
+  { title: "Lamaze", description: "Evidence-based childbirth education", url: "https://www.lamaze.org/" },
+  { title: "Ina May Gaskin", description: "Clearly attributed childbirth perspectives", url: "https://inamay.com/" },
+];
 const starters = [
   "Help me understand my doctor's advice",
   "I have a question about my report",
@@ -93,6 +100,7 @@ function Paragraphs({ text }: { text: string }) {
 }
 
 export default function App() {
+  const availability = useQuery(api.settings.availability);
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn, signOut } = useAuthActions();
   const ask = useAction(api.conversation.reply);
@@ -107,6 +115,15 @@ export default function App() {
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<Id<"sessions"> | null>(null);
+  const [sessionEndsAt, setSessionEndsAt] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(600);
+  const [timeEnded, setTimeEnded] = useState(false);
+  const [spokenReplies, setSpokenReplies] = useState(true);
+  const ending = useRef(false);
+  const closed = useRef(false);
+  const lifecycle = useRef(0);
+  const spokenRepliesRef = useRef(spokenReplies);
+  spokenRepliesRef.current = spokenReplies;
   const [reports, setReports] = useState<Report[]>([]);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -115,7 +132,7 @@ export default function App() {
   const [expired, setExpired] = useState(false);
   const [pendingStart, setPendingStart] = useState(false);
   const opening = useRef(false);
-  const [info, setInfo] = useState<"sources" | "privacy" | "membership" | null>(
+  const [info, setInfo] = useState<"sources" | "privacy" | null>(
     null,
   );
   const [useful, setUseful] = useState<boolean | null>(null);
@@ -138,9 +155,26 @@ export default function App() {
     // Do not store reports or conversation in browser storage. Explicit end deletes
     // server data; an expiring server lease covers closed tabs and network loss.
     const close = () => {
+      lifecycle.current++;
       const id = sessionRef.current;
+      closed.current = true;
       if (id) void finish({ sessionId: id }).catch(() => {});
       recognition.current?.abort();
+      window.speechSynthesis?.cancel();
+      sessionRef.current = null;
+      setSessionId(null);
+      setSessionEndsAt(null);
+      setMessages([]);
+      setReports([]);
+      setDraft("");
+      setPanel("home");
+      setInfo(null);
+      setVoiceConsent(false);
+      setVoiceDialog(false);
+      setListening(false);
+      setPendingStart(false);
+      setBusy(false);
+      opening.current = false;
     };
     window.addEventListener("pagehide", close);
     return () => {
@@ -157,10 +191,7 @@ export default function App() {
           String(e).includes("session has ended") ||
           String(e).includes("Sign in")
         ) {
-          setExpired(true);
-          setError(
-            "Your session has expired. Start a new conversation to continue.",
-          );
+          if (sessionRef.current === sessionId) void endRef.current("expired");
         }
       });
     };
@@ -175,10 +206,7 @@ export default function App() {
   function showError(e: unknown, fallback: string) {
     const text = e instanceof Error ? e.message : "";
     if (text.includes("session has ended") || text.includes("Sign in before")) {
-      setExpired(true);
-      setError(
-        "Your session has expired. Start a new conversation to continue.",
-      );
+      void endRef.current("expired");
       return;
     }
     setError(
@@ -190,20 +218,37 @@ export default function App() {
   const openConversation = useCallback(async () => {
     if (opening.current) return;
     opening.current = true;
+    const generation = ++lifecycle.current;
     setBusy(true);
     try {
+      const startedAt = Date.now();
       const id = await begin({});
+      if (generation !== lifecycle.current) {
+        void finish({ sessionId: id }).catch(() => {});
+        return;
+      }
+      sessionRef.current = id;
+      ending.current = false;
+      closed.current = false;
       setSessionId(id);
+      setSessionEndsAt(startedAt + SESSION_LENGTH);
+      setSecondsLeft(600);
+      setTimeEnded(false);
+      setUseful(null);
+      setReason("");
       setMessages([]);
       setReports([]);
       setPanel("chat");
     } catch (e) {
+      if (generation !== lifecycle.current) return;
       setError("The conversation could not start. Please try again.");
     } finally {
-      setBusy(false);
-      opening.current = false;
+      if (generation === lifecycle.current) {
+        setBusy(false);
+        opening.current = false;
+      }
     }
-  }, [begin]);
+  }, [begin, finish]);
   useEffect(() => {
     if (!pendingStart || !isAuthenticated) return;
     setPendingStart(false);
@@ -229,8 +274,11 @@ export default function App() {
   }
   async function send(e: FormEvent) {
     e.preventDefault();
-    if (!draft.trim() || busy || uploading || !sessionId) return;
-    const text = draft.trim();
+    await submitQuestion(draft);
+  }
+  async function submitQuestion(question: string) {
+    if (!question.trim() || busy || uploading || !sessionId || closed.current || expired || !availability?.ai) return;
+    const text = question.trim();
     const history = [...messages];
     setMessages((prev) => [...prev, { role: "user", text }]);
     setDraft("");
@@ -244,11 +292,17 @@ export default function App() {
           .slice(-12)
           .map((m) => ({ role: m.role, text: m.text })),
       });
+      if (closed.current || sessionRef.current !== sessionId) return;
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: result.text, sources: result.sources },
       ]);
+      if (spokenRepliesRef.current) {
+        try { readAloud(result.text); }
+        catch (e) { showError(e, e instanceof Error ? e.message : "You can read the answer here."); }
+      }
     } catch (e) {
+      if (closed.current || sessionRef.current !== sessionId) return;
       setMessages(history);
       setDraft(text);
       showError(
@@ -260,7 +314,7 @@ export default function App() {
     }
   }
   async function upload(file?: File) {
-    if (!file || !sessionId) return;
+    if (!file || !sessionId || ending.current || expired) return;
     setError("");
     if (
       !["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(
@@ -292,40 +346,80 @@ export default function App() {
       });
       if (!response.ok) throw new Error("Upload failed");
       const { id } = await response.json();
+      if (closed.current || sessionRef.current !== sessionId) return;
       setReports((prev) => [...prev, { id, name: file.name }]);
     } catch (e) {
+      if (closed.current || sessionRef.current !== sessionId) return;
       showError(e, "Your report could not be attached. Please try again.");
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
     }
   }
-  async function endConversation() {
+  async function endConversation(cause: "manual" | "timeout" | "expired" = "manual") {
+    if (ending.current) return;
+    ending.current = true;
+    closed.current = true;
     setBusy(true);
     setError("");
     recognition.current?.abort();
     window.speechSynthesis?.cancel();
+    setListening(false);
+    setVoiceDialog(false);
+    setVoiceConsent(false);
+    if (cause !== "manual") {
+      setExpired(true);
+      setTimeEnded(cause === "timeout");
+      setReports([]);
+      setMessages([]);
+      setDraft("");
+    }
     try {
       if (sessionId) await finish({ sessionId });
+      sessionRef.current = null;
       setSessionId(null);
+      setSessionEndsAt(null);
       setReports([]);
       setMessages([]);
       setDraft("");
       setPanel("feedback");
+      setInfo(null);
       await signOut().catch(() =>
         setError(
           "Your conversation was cleared, but sign-out could not finish. Please close this tab if you are on a shared device.",
         ),
       );
     } catch {
+      if (cause === "manual" && !expired) closed.current = false;
       setError(
         "We could not confirm deletion. Please try ending the conversation again.",
       );
     } finally {
+      ending.current = false;
       setBusy(false);
     }
   }
+  const endRef = useRef(endConversation);
+  endRef.current = endConversation;
+  useEffect(() => {
+    if (!sessionEndsAt) return;
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((sessionEndsAt - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (!remaining) {
+        window.clearInterval(timer);
+        void endRef.current("timeout");
+      }
+    };
+    const timer = window.setInterval(tick, 1000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [sessionEndsAt]);
   function microphone(consented = false) {
+    if (ending.current || expired) return;
     setError("");
     if (listening) {
       recognition.current?.stop();
@@ -347,9 +441,10 @@ export default function App() {
     r.continuous = false;
     r.interimResults = false;
     r.onresult = (event) => {
-      setDraft(
-        (prev) => `${prev}${prev ? " " : ""}${event.results[0][0].transcript}`,
-      );
+      if (closed.current || sessionRef.current !== sessionId) return;
+      const question = `${draft}${draft ? " " : ""}${event.results[0][0].transcript}`;
+      setDraft(question);
+      if (availability?.ai) void submitQuestion(question);
     };
     r.onerror = () => {
       setError(
@@ -418,19 +513,6 @@ export default function App() {
           </button>
         </nav>
         <div className="sidebar-bottom">
-          <div className="membership-note">
-            <Leaf size={22} />
-            <h3>A little more support</h3>
-            <p>Saved reports and conversations, whenever you need them.</p>
-            <button
-              onClick={() => {
-                setInfo("membership");
-                setMenu(false);
-              }}
-            >
-              Membership coming soon <ChevronRight size={15} />
-            </button>
-          </div>
           <span className="made-for">Made with care, for you.</span>
         </div>
       </aside>
@@ -476,28 +558,7 @@ export default function App() {
                   can check.
                 </p>
                 <div className="source-list">
-                  {[
-                    [
-                      "FOGSI",
-                      "Indian obstetric and gynaecological guidance",
-                      "https://www.fogsi.org/",
-                    ],
-                    [
-                      "ACOG",
-                      "Pregnancy guidance from obstetric specialists",
-                      "https://www.acog.org/womens-health",
-                    ],
-                    [
-                      "Lamaze",
-                      "Evidence-based childbirth education",
-                      "https://www.lamaze.org/",
-                    ],
-                    [
-                      "Ina May Gaskin",
-                      "Clearly attributed childbirth perspectives",
-                      "https://inamay.com/",
-                    ],
-                  ].map(([name, desc, url]) => (
+                  {referenceSources.map(({ title: name, description: desc, url }) => (
                     <a key={name} href={url} target="_blank" rel="noreferrer">
                       <div>
                         <h3>{name}</h3>
@@ -537,7 +598,8 @@ export default function App() {
                   <p>
                     Ending your conversation deletes its temporary reports and
                     clears the chat from this page. Conversation messages are
-                    not stored in our database. If a tab closes unexpectedly,
+                    not stored in our database. Each free session ends after
+                    10 minutes. If a tab closes unexpectedly,
                     temporary uploads expire within five minutes after the page
                     stops checking in, for example when it is closed or left in
                     the background.
@@ -559,33 +621,6 @@ export default function App() {
                 </div>
               </>
             )}
-            {info === "membership" && (
-              <>
-                <Leaf className="page-icon" />
-                <h1>
-                  Support that
-                  <br />
-                  stays with you.
-                </h1>
-                <p className="intro">Paid membership is coming soon.</p>
-                <div className="prose">
-                  <p>
-                    Return to your conversations and keep your reports together.
-                    These will be the first membership benefits.
-                  </p>
-                  <p>
-                    There are no payments or subscriptions in this first
-                    version.
-                  </p>
-                </div>
-                <button
-                  className="primary-button"
-                  onClick={() => setInfo(null)}
-                >
-                  Back to Tigermom <ArrowRight size={17} />
-                </button>
-              </>
-            )}
           </section>
         ) : (
           <div
@@ -603,9 +638,9 @@ export default function App() {
                   confidence.
                 </h1>
                 <p className="intro">
-                  Pregnancy comes with questions.
+                  Just back from your doctor?
                   <br />
-                  You don’t have to hold them all alone.
+                  Make room for your own questions.
                 </p>
                 <p className="welcome-description">
                   Let’s make sense of your care, understand your reports, and
@@ -630,6 +665,12 @@ export default function App() {
                   provider is here to care for you.
                 </p>
               </div>
+              {panel === "home" && (
+                <section className="community-note" aria-label="Community stories">
+                  <h2>Other voices, shared with care.</h2>
+                  <p>Anonymous stories will appear here once women choose to share their feedback. No testimonials have been published yet.</p>
+                </section>
+              )}
             </section>
             <section
               className="conversation-column"
@@ -657,11 +698,11 @@ export default function App() {
                   <p>
                     There’s no question too small.
                     <br />
-                    Start wherever you are.
+                    Talk for free for 10 minutes. No sign-up needed.
                   </p>
                   <div className="starter-list">
                     {starters.map((s, i) => (
-                      <button key={s} onClick={() => void start(s)}>
+                      <button key={s} disabled={busy || isLoading} onClick={() => void start(s)}>
                         <span>
                           {i === 1 ? (
                             <FileText size={18} />
@@ -681,13 +722,13 @@ export default function App() {
                     disabled={busy || isLoading}
                     onClick={() => void start()}
                   >
-                    <AudioLines size={20} /> Start a conversation{" "}
+                    <AudioLines size={20} /> Talk to Tigermom{" "}
                     <ArrowRight size={18} />
                   </button>
                   <p className="session-note">
-                    <LockKeyhole size={12} /> Free for now. No conversation
-                    history saved.
+                    <LockKeyhole size={12} /> Reports and chat disappear when your session ends.
                   </p>
+                  {availability?.ai === false && <p className="service-note" role="status">Live AI replies are paused. You can read a sample conversation or explore a private session.</p>}
                   <div className="sample-entry">
                     <span>Want to get a feel for Tigermom?</span>
                     <button
@@ -796,6 +837,18 @@ export default function App() {
                     </div>
                   ) : (
                     <div className="composer-area">
+                      {availability?.ai === false && <p className="service-note" role="status">Live AI replies are paused. Your questions won’t be sent to AI.</p>}
+                      <div className="session-controls">
+                        <span className="session-timer" role="timer" aria-label="Time remaining">
+                          {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")} left
+                        </span>
+                        <label className="spoken-replies">
+                          <input type="checkbox" checked={spokenReplies} onChange={(e) => {
+                            setSpokenReplies(e.target.checked);
+                            if (!e.target.checked) window.speechSynthesis?.cancel();
+                          }} /> Spoken replies
+                        </label>
+                      </div>
                       {reports.map((r) => (
                         <div className="report-chip" key={r.id}>
                           <FileText size={14} />
@@ -824,7 +877,7 @@ export default function App() {
                         <div className="voice-consent">
                           <p>
                             Your browser may send audio to its speech service.
-                            Use voice input, or keep typing.
+                            When AI is available, your question is sent when you finish speaking. Use voice input, or keep typing.
                           </p>
                           <button
                             onClick={() => {
@@ -854,7 +907,7 @@ export default function App() {
                             }
                           }}
                           rows={2}
-                          disabled={busy}
+                          disabled={busy || expired}
                         />
                         <div className="composer-controls">
                           <input
@@ -868,7 +921,7 @@ export default function App() {
                             type="button"
                             className="icon-button"
                             aria-label="Attach medical report"
-                            disabled={uploading || busy || reports.length >= 3}
+                            disabled={uploading || busy || expired || reports.length >= 3}
                             onClick={() => fileInput.current?.click()}
                           >
                             {uploading ? (
@@ -886,7 +939,7 @@ export default function App() {
                             aria-label={
                               listening ? "Stop listening" : "Use microphone"
                             }
-                            disabled={busy}
+                            disabled={busy || expired}
                             onClick={() => microphone()}
                           >
                             {listening ? (
@@ -898,19 +951,19 @@ export default function App() {
                           <button
                             className="send-button"
                             aria-label="Send question"
-                            disabled={!draft.trim() || busy || uploading}
+                            disabled={!draft.trim() || busy || uploading || expired || !availability?.ai}
                           >
                             <Send size={17} />
                           </button>
                         </div>
                       </form>
                       <div className="end-row">
-                        <span>Your free session is temporary.</span>
+                        <span>10 minutes. Free and temporary.</span>
                         <button
                           disabled={busy || uploading}
                           onClick={() => void endConversation()}
                         >
-                          End & delete conversation
+                          End conversation
                         </button>
                       </div>
                     </div>
@@ -923,6 +976,7 @@ export default function App() {
                     <Check size={26} />
                   </span>
                   <h2>A little clearer?</h2>
+                  {timeEnded && <p>Your free 10 minutes are up.</p>}
                   <p>
                     Your conversation has ended and your temporary reports have
                     been deleted.
@@ -966,7 +1020,7 @@ export default function App() {
                         disabled={!reason}
                         onClick={() => setPanel("thanks")}
                       >
-                        Finish <ArrowRight size={17} />
+                        Continue to sources <ArrowRight size={17} />
                       </button>
                     </>
                   )}
@@ -981,17 +1035,17 @@ export default function App() {
               {panel === "thanks" && (
                 <div className="feedback-content">
                   <Heart size={32} className="thank-heart" />
-                  <h2>Your voice matters.</h2>
-                  <p>Thank you for making space for yourself.</p>
-                  <div className="membership-inline">
-                    <Leaf size={23} />
-                    <h3>A little more support, coming soon.</h3>
-                    <p>
-                      Membership will let you keep your reports and return to
-                      your conversations.
-                    </p>
-                    <span>No payments in this first version.</span>
+                  <h2>Sources you can explore.</h2>
+                  <p>Your conversation is cleared. These reference sources are here whenever you want to learn more.</p>
+                  <div className="source-list">
+                    {referenceSources.map((source) => (
+                      <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
+                        <div><h3>{source.title}</h3><p>{source.description}</p></div>
+                        <ArrowRight size={19} />
+                      </a>
+                    ))}
                   </div>
+                  <p className="fine-print">Reference sources, not endorsements. Each live answer must link to the specific evidence used.</p>
                   <button
                     className="primary-button"
                     onClick={() => {

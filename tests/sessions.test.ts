@@ -36,6 +36,26 @@ async function fixture() {
   return { t, owner, other, userId, sessionId, reportId, storageId };
 }
 describe("Private free sessions", () => {
+  it("ends at ten minutes even when the page keeps checking in", async () => {
+    vi.useFakeTimers();
+    const f = await fixture();
+    const started = Math.ceil(await f.t.run(async (ctx) => (await ctx.db.get(f.sessionId))!._creationTime));
+    for (let minute = 1; minute < 10; minute++) {
+      vi.setSystemTime(started + minute * 60_000);
+      await f.owner.mutation(api.sessions.heartbeat, { sessionId: f.sessionId });
+    }
+    vi.setSystemTime(started + 10 * 60_000);
+    await expect(f.owner.mutation(api.sessions.heartbeat, {
+      sessionId: f.sessionId,
+    })).rejects.toThrow("session has ended");
+    await expect(f.owner.mutation(internal.sessions.claim, {
+      sessionId: f.sessionId,
+    })).rejects.toThrow("session has ended");
+    await f.t.mutation(internal.sessions.expire, { sessionId: f.sessionId });
+    expect(await f.t.run((ctx) => ctx.storage.get(f.storageId))).toBeNull();
+    expect(await f.t.run((ctx) => ctx.db.get(f.sessionId))).toBeNull();
+    await f.t.finishAllScheduledFunctions(() => vi.runAllTimers());
+  });
   it("deletes reports and their storage when the woman ends her session", async () => {
     const f = await fixture();
     await f.owner.mutation(api.sessions.finish, { sessionId: f.sessionId });

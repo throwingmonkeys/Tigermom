@@ -13,6 +13,23 @@
   --white: #fff;
   --focus: #994976;
 }
+.session-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.session-timer { font-variant-numeric: tabular-nums; color: var(--plum); font-weight: 700; }
+.spoken-replies { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; }
+.spoken-replies input { accent-color: var(--plum); width: 17px; height: 17px; }
+.community-note { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+.community-note h2 { font-size: 16px; margin: 0 0 8px; }
+.community-note p { font-size: 13px; line-height: 1.8; color: var(--muted); margin: 0; }
+.service-note { font-size: 12px; line-height: 1.7; color: var(--plum); margin: 12px 0; }
+.feedback-content .source-list { text-align: left; margin: 24px 0; }
 * {
   box-sizing: border-box;
 }

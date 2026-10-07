@@ -22,6 +22,8 @@ export function recognitionConstructor() {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition;
 }
 export function readAloud(text: string) {
+  if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === "undefined")
+    throw new Error("Spoken replies are not available in this browser. You can read the answer here.");
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(
     text.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/[*#]/g, ""),
@@ -30,6 +32,8 @@ export function readAloud(text: string) {
   utterance.rate = 0.94;
   const voices = window.speechSynthesis.getVoices();
   const local =
+    voices.find((v) => v.localService && v.lang === "en-IN" && /female|heera|neerja|priya|veena/i.test(v.name)) ??
+    voices.find((v) => v.localService && v.lang.startsWith("en") && /female|zira|samantha|susan|hazel|aria|jenny/i.test(v.name)) ??
     voices.find((v) => v.localService && v.lang === "en-IN") ??
     voices.find((v) => v.localService && v.lang.startsWith("en"));
   if (!local)

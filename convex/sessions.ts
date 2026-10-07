@@ -6,6 +6,7 @@ import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 
 const LEASE = 5 * 60_000;
+const SESSION_LENGTH = 10 * 60_000;
 export async function ownedSession(
   ctx: QueryCtx | MutationCtx,
   sessionId: Id<"sessions">,
@@ -17,7 +18,8 @@ export async function ownedSession(
     !session ||
     session.userId !== userId ||
     session.ended ||
-    session.expiresAt <= Date.now()
+    session.expiresAt <= Date.now() ||
+    session._creationTime + SESSION_LENGTH <= Date.now()
   )
     throw new ConvexError(
       "Your session has ended. Please start a new conversation.",
@@ -65,8 +67,10 @@ export const heartbeat = mutation({
   args: { sessionId: v.id("sessions") },
   returns: v.null(),
   handler: async (ctx, { sessionId }) => {
-    await ownedSession(ctx, sessionId);
-    await ctx.db.patch(sessionId, { expiresAt: Date.now() + LEASE });
+    const session = await ownedSession(ctx, sessionId);
+    await ctx.db.patch(sessionId, {
+      expiresAt: Math.min(Date.now() + LEASE, session._creationTime + SESSION_LENGTH),
+    });
     return null;
   },
 });
@@ -89,10 +93,11 @@ export const expire = internalMutation({
   handler: async (ctx, { sessionId }) => {
     const session = await ctx.db.get(sessionId);
     if (!session) return null;
-    if (session.expiresAt <= Date.now()) await erase(ctx, sessionId);
+    const deadline = Math.min(session.expiresAt, session._creationTime + SESSION_LENGTH);
+    if (deadline <= Date.now()) await erase(ctx, sessionId);
     else
       await ctx.scheduler.runAfter(
-        session.expiresAt - Date.now(),
+        deadline - Date.now(),
         internal.sessions.expire,
         { sessionId },
       );
@@ -116,7 +121,7 @@ export const claim = internalMutation({
       calls: session.calls + 1,
       lastCallAt: Date.now(),
       inFlight: true,
-      expiresAt: Date.now() + LEASE,
+      expiresAt: Math.min(Date.now() + LEASE, session._creationTime + SESSION_LENGTH),
     });
     return null;
   },

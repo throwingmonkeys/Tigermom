@@ -1,5 +1,6 @@
 export interface SpeechResultEvent {
-  results: { transcript: string }[][];
+  resultIndex?: number;
+  results: ({ transcript: string }[] & { isFinal?: boolean })[];
 }
 export interface Recognition {
   lang: string;
@@ -8,6 +9,8 @@ export interface Recognition {
   onresult: ((event: SpeechResultEvent) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onspeechstart?: (() => void) | null;
+  onspeechend?: (() => void) | null;
   start(): void;
   stop(): void;
   abort(): void;
@@ -21,7 +24,7 @@ declare global {
 export function recognitionConstructor() {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition;
 }
-export function readAloud(text: string) {
+export function readAloud(text: string, onEnd?: () => void) {
   if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === "undefined")
     throw new Error("Spoken replies are not available in this browser. You can read the answer here.");
   window.speechSynthesis.cancel();
@@ -47,5 +50,7 @@ export function readAloud(text: string) {
     );
   utterance.voice = local;
   utterance.lang = local.lang;
+  utterance.onend = () => onEnd?.();
+  utterance.onerror = () => onEnd?.();
   window.speechSynthesis.speak(utterance);
 }

@@ -30,7 +30,8 @@ import {
   X,
 } from "lucide-react";
 import { api } from "../convex/_generated/api";
-import { recognitionConstructor, readAloud, type Recognition } from "./speech";
+import { recognitionConstructor, readAloud } from "./speech";
+import { VoiceConversation } from "./voice";
 import type { Id } from "../convex/_generated/dataModel";
 
 type Source = { title: string; url: string };
@@ -140,7 +141,21 @@ export default function App() {
   const [listening, setListening] = useState(false);
   const [voiceConsent, setVoiceConsent] = useState(false);
   const [voiceDialog, setVoiceDialog] = useState(false);
-  const recognition = useRef<Recognition | null>(null);
+  const voice = useRef<VoiceConversation | null>(null);
+  const voiceHandlers = useRef<{
+    getDraft: () => string;
+    canSend: () => boolean;
+    onQuestion: (text: string) => Promise<void>;
+  }>({
+    getDraft: () => "",
+    canSend: () => false,
+    onQuestion: async (_text: string) => {},
+  });
+  voiceHandlers.current = {
+    getDraft: () => draft,
+    canSend: () => !busy && !uploading && Boolean(sessionId) && !closed.current && !expired && Boolean(availability?.ai),
+    onQuestion: submitQuestion,
+  };
   const fileInput = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<Id<"sessions"> | null>(null);
@@ -159,7 +174,8 @@ export default function App() {
       const id = sessionRef.current;
       closed.current = true;
       if (id) void finish({ sessionId: id }).catch(() => {});
-      recognition.current?.abort();
+      voice.current?.stop();
+      voice.current = null;
       window.speechSynthesis?.cancel();
       sessionRef.current = null;
       setSessionId(null);
@@ -179,7 +195,8 @@ export default function App() {
     window.addEventListener("pagehide", close);
     return () => {
       window.removeEventListener("pagehide", close);
-      recognition.current?.abort();
+      voice.current?.stop();
+      voice.current = null;
     };
   }, [finish]);
   useEffect(() => {
@@ -202,6 +219,7 @@ export default function App() {
       document.removeEventListener("visibilitychange", ping);
     };
   }, [sessionId, heartbeat]);
+  useEffect(() => { voice.current?.ready(); }, [busy, uploading, availability?.ai]);
 
   function showError(e: unknown, fallback: string) {
     const text = e instanceof Error ? e.message : "";
@@ -279,6 +297,10 @@ export default function App() {
   async function submitQuestion(question: string) {
     if (!question.trim() || busy || uploading || !sessionId || closed.current || expired || !availability?.ai) return;
     const text = question.trim();
+    const voiceAtSend = voice.current;
+    const voiceRevision = voiceAtSend?.revision;
+    voiceAtSend?.consumeDraft();
+    window.speechSynthesis?.cancel();
     const history = [...messages];
     setMessages((prev) => [...prev, { role: "user", text }]);
     setDraft("");
@@ -297,18 +319,24 @@ export default function App() {
         ...prev,
         { role: "assistant", text: result.text, sources: result.sources },
       ]);
-      if (spokenRepliesRef.current) {
-        try { readAloud(result.text); }
+      const interrupted = voice.current === voiceAtSend && voiceAtSend?.revision !== voiceRevision;
+      if (spokenRepliesRef.current && !interrupted && !voice.current?.hasPendingSpeech) {
+        try { speakReply(result.text); }
         catch (e) { showError(e, e instanceof Error ? e.message : "You can read the answer here."); }
       }
     } catch (e) {
       if (closed.current || sessionRef.current !== sessionId) return;
       setMessages(history);
-      setDraft(text);
+      if (!voice.current?.hasPendingSpeech) setDraft(text);
       setError("Busy right now. Try again in a few minutes.");
     } finally {
       setBusy(false);
     }
+  }
+  function speakReply(text: string) {
+    const finishSpeaking = voice.current?.replyStarted(text);
+    try { readAloud(text, finishSpeaking); }
+    catch (error) { finishSpeaking?.(); throw error; }
   }
   async function upload(file?: File) {
     if (!file || !sessionId || ending.current || expired) return;
@@ -359,7 +387,8 @@ export default function App() {
     closed.current = true;
     setBusy(true);
     setError("");
-    recognition.current?.abort();
+    voice.current?.stop();
+    voice.current = null;
     window.speechSynthesis?.cancel();
     setListening(false);
     setVoiceDialog(false);
@@ -419,7 +448,8 @@ export default function App() {
     if (ending.current || expired) return;
     setError("");
     if (listening) {
-      recognition.current?.stop();
+      voice.current?.stop();
+      voice.current = null;
       return;
     }
     if (!voiceConsent && !consented) {
@@ -433,30 +463,18 @@ export default function App() {
       );
       return;
     }
-    const r = new Constructor();
-    r.lang = "en-IN";
-    r.continuous = false;
-    r.interimResults = false;
-    r.onresult = (event) => {
-      if (closed.current || sessionRef.current !== sessionId) return;
-      const question = `${draft}${draft ? " " : ""}${event.results[0][0].transcript}`;
-      setDraft(question);
-      if (availability?.ai) void submitQuestion(question);
-    };
-    r.onerror = () => {
-      setError(
-        "We could not hear you. Check microphone permission or type your question.",
-      );
-      setListening(false);
-    };
-    r.onend = () => setListening(false);
-    recognition.current = r;
-    try {
-      r.start();
-      setListening(true);
-    } catch {
-      setError("Microphone could not start. You can type instead.");
-    }
+    voice.current?.stop();
+    voice.current = new VoiceConversation({
+      createRecognition: () => new Constructor(),
+      getDraft: () => voiceHandlers.current.getDraft(),
+      canSend: () => voiceHandlers.current.canSend(),
+      onQuestion: text => voiceHandlers.current.onQuestion(text),
+      onDraft: setDraft,
+      onListening: setListening,
+      onError: setError,
+      cancelSpeech: () => window.speechSynthesis?.cancel(),
+    });
+    voice.current.start();
   }
   return (
     <div className="app-shell">
@@ -783,7 +801,7 @@ export default function App() {
                             className="read-button"
                             onClick={() => {
                               try {
-                                readAloud(m.text);
+                                speakReply(m.text);
                               } catch (e) {
                                 showError(
                                   e,
@@ -868,7 +886,7 @@ export default function App() {
                         <div className="voice-consent">
                           <p>
                             Your browser may send audio to its speech service.
-                            When AI is available, your question is sent when you finish speaking. Use voice input, or keep typing.
+                            Voice stays on until you stop it or end the conversation. Your question is sent after a four-second pause. You can speak to interrupt Tigermom, or keep typing.
                           </p>
                           <button
                             onClick={() => {
@@ -928,7 +946,7 @@ export default function App() {
                             aria-label={
                               listening ? "Stop listening" : "Use microphone"
                             }
-                            disabled={busy || expired}
+                            disabled={expired}
                             onClick={() => microphone()}
                           >
                             {listening ? (
@@ -946,6 +964,7 @@ export default function App() {
                           </button>
                         </div>
                       </form>
+                      {listening && <p className="service-note" role="status">Voice is on. Take your time; pause for 4 seconds when you’re done. Speak to interrupt, or tap the mic to stop.</p>}
                       <div className="end-row">
                         <span>10 minutes. Free and temporary.</span>
                         <button

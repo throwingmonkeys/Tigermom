@@ -184,7 +184,7 @@ describe("Conversation screens", () => {
     await user.click(screen.getByRole("button", { name: /Talk to Tigermom/ }));
     expect((await screen.findByRole("textbox", { name: "Your question" }) as HTMLTextAreaElement).value).toBe("");
   });
-  it("sends a spoken question after consent and speaks the reply", async () => {
+  it("waits for a full pause after consent, then speaks the reply and keeps voice on", async () => {
     state.authenticated = true;
     let microphone!: Recognition;
     window.SpeechRecognition = class {
@@ -201,11 +201,55 @@ describe("Conversation screens", () => {
     await user.click(await screen.findByRole("button", { name: "Use microphone" }));
     expect(state.reply).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Use voice input" }));
+    vi.useFakeTimers();
     await act(async () => { microphone.onresult?.({ results: [[{ transcript: "Explain my doctor's advice" }]] }); });
+    expect(state.reply).not.toHaveBeenCalled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(4000); });
     expect(state.reply).toHaveBeenCalledWith(expect.objectContaining({ text: "Explain my doctor's advice" }));
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Stop listening" })).toBeDefined();
+    vi.useRealTimers();
     await user.click(screen.getByRole("checkbox", { name: "Spoken replies" }));
     expect(window.speechSynthesis.cancel).toHaveBeenCalled();
+  });
+  it("keeps a spoken follow-up while waiting and does not read the interrupted answer", async () => {
+    vi.useFakeTimers();
+    state.authenticated = true;
+    let mic!: Recognition;
+    window.SpeechRecognition = class {
+      lang = ""; continuous = false; interimResults = false;
+      onresult: Recognition["onresult"] = null;
+      onerror: Recognition["onerror"] = null;
+      onend: Recognition["onend"] = null;
+      constructor() { mic = this; }
+      start() {} stop() {} abort() {}
+    };
+    let resolveFirst!: (reply: { text: string; sources: [] }) => void;
+    state.reply.mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve; }));
+    render(<App />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Talk to Tigermom" })); });
+    fireEvent.click(screen.getByRole("button", { name: "Use microphone" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use voice input" }));
+    await act(async () => {
+      mic.onresult?.({ results: [[{ transcript: "First complete question" }]] });
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+    expect(state.reply).toHaveBeenCalledTimes(1);
+    expect((screen.getByRole("button", { name: "Stop listening" }) as HTMLButtonElement).disabled).toBe(false);
+    await act(async () => {
+      mic.onresult?.({ resultIndex: 1, results: [[{ transcript: "First complete question" }], [{ transcript: "Wait, my follow-up question" }]] });
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+    expect(state.reply).toHaveBeenCalledTimes(1);
+    await act(async () => { resolveFirst({ text: "The first answer", sources: [] }); });
+    expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(state.reply).toHaveBeenCalledTimes(2);
+    expect(state.reply.mock.calls[1][0]).toMatchObject({
+      text: "Wait, my follow-up question",
+      history: [{ role: "user", text: "First complete question" }, { role: "assistant", text: "The first answer" }],
+    });
+    expect(window.speechSynthesis.speak).toHaveBeenCalledTimes(1);
   });
   it("clears private content immediately when the server reports expiry", async () => {
     state.authenticated = true;

@@ -6,7 +6,7 @@ The interface and Convex foundation are implemented. The app runs at http://127.
 
 - Development Convex backend compiles and pushes.
 - Frontend compiles and builds.
-- Twenty-two automated checks pass, including the fixed ten-minute limit, late replies, server-expiry cleanup, paused AI, simulated speech, cancelled startup, shared hourly quota, rolling-hour boundary, provider failure, source-link filtering, synthetic voice selection, and personal-result redirection without a provider call.
+- Thirty-one automated checks pass, including session cleanup, AI quotas, source filtering, personal-result redirection, and hands-free voice timing, restarts, interruption, queued follow-ups, permission errors, and cleanup.
 - Real cloud rejects unsigned session creation and report upload; auth signing-key endpoint works.
 - No conversation-history table or browser persistence was added. Free-session report cleanup is tested.
 - Guest sign-in, synthetic report upload, unauthorized-access rejection, cleanup, and sign-out work against the real cloud. No phone number or code is collected; no SMS service is needed.
@@ -15,7 +15,7 @@ The interface and Convex foundation are implemented. The app runs at http://127.
 - GPT-5.4 mini performs domain-filtered source search, followed by brief composition without another search. GPT-4.1 mini rejected source filters in the real API. Instructions allow general educational questions and optional report-wording explanations, while prohibiting personal result interpretation and medical advice. A server guard redirects recognized personal-result questions to the doctor without calling AI. The real dev personal-result test passed; this guard and prompt do not establish compliance for every possible phrasing.
 - Replies target 40–60 words and three sentences with a calm, direct, empowering tone. Speech prefers a standard local synthetic voice, lower pitch (0.7), and normal speed; actual voice availability and sound depend on the device and remain unheard here.
 - The hosted production homepage loaded, anonymous sign-in and a new session worked, and a real AI reply arrived. The synthetic test session was ended and signed out. These are network checks; no browser was connected for visual or audio verification.
-- Spoken input sends after consent; spoken replies can be switched off. These paths are checked with simulated speech, not a real microphone or speaker.
+- After consent, voice mode stays on between turns, keeps partial sentences across recognition restarts, and sends after four seconds of quiet. New recognized words stop spoken replies; matching reply fragments are ignored to reduce speaker echo. Follow-ups spoken while an answer is pending are kept and sent when it finishes; that older answer is not spoken over the new question. Stopping voice or ending/closing a session cancels recognition and pending voice timers. Spoken replies can be switched off separately. These paths are checked with simulated speech, not a real microphone or speaker; device echo and browser recognition delays still need a live audio check.
 - Three testimonial tiles are visibly marked as placeholders until real, permissioned feedback is available. Button labels follow PRODUCT.md, including the sample conversation start action.
 
 ## Remaining

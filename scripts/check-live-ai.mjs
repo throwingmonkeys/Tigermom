@@ -25,9 +25,9 @@ try {
   });
   if (!reply.text.trim() || reply.text === "Busy right now. Try again in a few minutes.")
     throw new Error("Live AI returned no usable reply.");
-  if (!reply.sources.length || reply.text.split(/\s+/).length > 90)
+  if (!reply.sources.length || reply.text.split(/\s+/).length > 230)
     throw new Error("Live reply was missing checked sources or was too long.");
-  console.log("Live guest session received a short AI reply with checked sources.");
+  console.log("Live guest session received an AI reply with checked sources.");
 } finally {
   if (sessionId) await guest.mutation(api.sessions.finish, { sessionId });
   await guest.action(api.auth.signOut, {});

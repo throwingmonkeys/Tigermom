@@ -23,7 +23,7 @@ try {
   if (process.argv.includes("--boundary")) {
     if (!reply.text.includes("I can’t judge your personal result")) throw new Error("Personal result boundary was not enforced.");
   } else if (!reply.sources.length) throw new Error("The development AI test returned no checked sources.");
-  if (reply.text.split(/\s+/).length > 90) throw new Error("The development reply was too long.");
+  if (reply.text.split(/\s+/).length > 230) throw new Error("The development reply was too long.");
 } finally {
   if (sessionId) await guest.mutation(api.sessions.finish, { sessionId });
   await guest.action(api.auth.signOut, {});

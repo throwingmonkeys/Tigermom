@@ -45,10 +45,10 @@ describe("AI budget", () => {
     });
     expect(reply.sources).toEqual([{ title: "ACOG questions", url: "https://www.acog.org/womens-health" }]);
     expect(generate.mock.calls[0][2]).toMatchObject({
-      toolChoice: { type: "tool", toolName: "web_search" }, maxOutputTokens: 250,
+      toolChoice: { type: "tool", toolName: "web_search" }, maxOutputTokens: 500,
     });
     expect(generate).toHaveBeenCalledTimes(2);
-    expect(generate.mock.calls[1][2]).toMatchObject({ toolChoice: "none", maxOutputTokens: 160, maxRetries: 0 });
+    expect(generate.mock.calls[1][2]).toMatchObject({ toolChoice: "none", maxOutputTokens: 500, maxRetries: 0 });
     expect(await t.run(async ctx => (await ctx.db.query("aiBudget").withIndex("by_key", q => q.eq("key", "global")).unique())?.calls.length)).toBe(2);
   });
   it("allows only 100 shared reservations across the app", async () => {
@@ -85,7 +85,7 @@ describe("AI budget", () => {
     expect(reply).toEqual({ text: "Busy right now. Try again in a few minutes.", sources: [] });
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0][1]).toEqual({ userId: sessionId });
-    expect(generate.mock.calls[0][2]).toMatchObject({ maxOutputTokens: 250, maxRetries: 0 });
+    expect(generate.mock.calls[0][2]).toMatchObject({ maxOutputTokens: 500, maxRetries: 0 });
     expect(await t.run(async ctx => (await ctx.db.get(sessionId))?.inFlight)).toBe(false);
   });
 });

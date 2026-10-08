@@ -35,3 +35,7 @@ Operating languages beyond the current English interface are undecided. Feedback
 ## October 8 design update
 
 Applied the supplied DESIGN.md: tiger logo, exact welcome text, top-to-bottom landing layout, paired Talk/Stop controls, question box beside report upload, requested loading/empty/upload-error wording, and natural female speech preference. JPEG/PDF report uploads only in the interface; backend data and AI limits unchanged. Survey and source flow retained. Production build and all 31 checks pass. No connected browser was available for visual or real-audio verification.
+
+## October 9 reply perspective update
+
+Removed the 40-60-word and three-sentence constraints. Answers now include a direct answer, relevant evidence-backed context or perspective, evidence limits when useful, and one doctor question where appropriate. Search and final composition each stay capped at 500 output tokens; both still reserve the shared 100-call hourly budget. Retrieval asks for current guidance and source/date attribution. A real dev induction question returned 173 words with WHO, ACOG and research links after strengthening instructions against mixing older guidance with newer claims. This sample is proof of the tested reply, not a guarantee of every answer.

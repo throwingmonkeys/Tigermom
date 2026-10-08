@@ -305,10 +305,7 @@ export default function App() {
       if (closed.current || sessionRef.current !== sessionId) return;
       setMessages(history);
       setDraft(text);
-      showError(
-        e,
-        "Tigermom could not answer just now. Your question is still here; please try again.",
-      );
+      setError("Busy right now. Try again in a few minutes.");
     } finally {
       setBusy(false);
     }

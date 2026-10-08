@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as aiLimits from "../aiLimits.js";
 import type * as auth from "../auth.js";
 import type * as conversation from "../conversation.js";
 import type * as evidence from "../evidence.js";
@@ -23,6 +24,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  aiLimits: typeof aiLimits;
   auth: typeof auth;
   conversation: typeof conversation;
   evidence: typeof evidence;
@@ -60,5 +62,6 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
   staticHosting: import("@convex-dev/static-hosting/_generated/component.js").ComponentApi<"staticHosting">;
 };

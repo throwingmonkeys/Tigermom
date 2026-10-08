@@ -5,6 +5,6 @@ export const availability = query({
   returns: v.object({ sms: v.boolean(), ai: v.boolean() }),
   handler: async () => ({
     sms: false,
-    ai: Boolean(process.env.AI_ENABLED === "true"),
+    ai: Boolean(process.env.OPENAI_API_KEY) && process.env.AI_ENABLED !== "false",
   }),
 });

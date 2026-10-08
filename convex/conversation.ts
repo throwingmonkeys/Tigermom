@@ -3,10 +3,9 @@ import { action } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { internal, components } from "./_generated/api";
 import { Agent } from "@convex-dev/agent";
-import { convexGateway } from "@convex-dev/ai-sdk-provider";
 import { openai } from "@ai-sdk/openai";
-import { stepCountIs, type ModelMessage, type UserContent } from "ai";
-import { instructions, trustedSource } from "./evidence";
+import { type ModelMessage, type UserContent } from "ai";
+import { instructions } from "./evidence";
 
 export const reply = action({
   args: {
@@ -31,50 +30,21 @@ export const reply = action({
       args.history.some((m) => m.text.length > 12000)
     )
       throw new ConvexError("Please keep your question shorter.");
-    await ctx.runMutation(internal.sessions.claim, {
-      sessionId: args.sessionId,
-    });
+    let claimed = false;
+    let stage = "session";
     try {
-      if (process.env.AI_ENABLED !== "true")
+      await ctx.runMutation(internal.sessions.claim, { sessionId: args.sessionId });
+      claimed = true;
+      stage = "configuration";
+      if (!process.env.OPENAI_API_KEY || process.env.AI_ENABLED === "false")
         throw new ConvexError("AI conversations are not configured");
       const guide = new Agent(components.agent, {
         name: "Tigermom",
-        languageModel: convexGateway.responses(
-          process.env.AI_MODEL ?? "openai/gpt-5",
-        ),
+        languageModel: openai.responses("gpt-4.1-mini"),
         instructions,
         storageOptions: { saveMessages: "none" },
-        tools: {
-          web_search: openai.tools.webSearch({
-            filters: {
-              allowedDomains: [
-                "fogsi.org",
-                "acog.org",
-                "who.int",
-                "mohfw.gov.in",
-                "nhm.gov.in",
-                "icmr.gov.in",
-                "pmc.ncbi.nlm.nih.gov",
-                "pubmed.ncbi.nlm.nih.gov",
-                "lamaze.org",
-                "inamay.com",
-                "ijrcog.org",
-                "reuters.com",
-                "apnews.com",
-                "bbc.com",
-                "thehindu.com",
-                "indianexpress.com",
-              ],
-            },
-            userLocation: {
-              country: "IN",
-              city: "Bengaluru",
-              type: "approximate",
-            },
-          }),
-        },
-        stopWhen: stepCountIs(4),
       });
+      stage = "reports";
       const files = await ctx.runQuery(internal.sessions.files, {
         sessionId: args.sessionId,
       });
@@ -101,13 +71,17 @@ export const reply = action({
         role: m.role,
         content: m.text,
       }));
+      const allowed = await ctx.runMutation(internal.aiLimits.reserve, {});
+      if (!allowed) return { text: "Busy right now. Try again in a few minutes.", sources: [] };
+      stage = "provider";
       const result = await guide.generateText(
         ctx,
-        {},
+        // Use the private session as an isolated scope; no history is stored.
+        { userId: args.sessionId },
         {
           messages: history,
           prompt: [{ role: "user", content }],
-          maxOutputTokens: 1800,
+          maxOutputTokens: 500,
           maxRetries: 0,
           abortSignal: AbortSignal.timeout(90_000),
           providerOptions: { openai: { store: false } },
@@ -117,29 +91,22 @@ export const reply = action({
           contextOptions: { recentMessages: 0 },
         },
       );
-      // Sources come from the search provider, never URLs invented in the prose.
-      const sources = result.sources.flatMap((s) =>
-        s.sourceType === "url" && trustedSource(s.url)
-          ? [{ title: s.title || new URL(s.url).hostname, url: s.url }]
-          : [],
-      );
-      const unique = Array.from(
-        new Map(sources.map((s) => [s.url, s])).values(),
-      ).slice(0, 6);
-      // An answer without retrieved evidence must not silently become medical advice.
-      if (!unique.length)
-        return {
-          text: "I’m here with you. I couldn’t verify a reliable source for that answer just now, and I don’t want to guess. Your care provider can help clarify it. What would you most like to ask them? If you’re describing symptoms that may be urgent, contact your care provider now; for a possible emergency, seek urgent medical help immediately.",
-          sources: [],
-        };
+      if (!result.text.trim()) throw new Error("Empty reply");
       const current = await ctx.runQuery(internal.sessions.files, {
         sessionId: args.sessionId,
       });
       // The ownership check above also makes an ended session reject late replies.
       void current;
-      return { text: result.text, sources: unique };
+      return { text: result.text, sources: [] };
+    } catch (error) {
+      // Log only an error category and HTTP status, never the error object,
+      // request headers, provider key, prompt, or uploaded report.
+      const status = error && typeof error === "object" && "statusCode" in error
+        && typeof error.statusCode === "number" ? error.statusCode : null;
+      console.warn("AI reply failed", stage, error instanceof Error ? error.name : "Unknown", status);
+      return { text: "Busy right now. Try again in a few minutes.", sources: [] };
     } finally {
-      await ctx.runMutation(internal.sessions.release, {
+      if (claimed) await ctx.runMutation(internal.sessions.release, {
         sessionId: args.sessionId,
       });
     }

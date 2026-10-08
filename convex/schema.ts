@@ -4,6 +4,8 @@ import { v } from "convex/values";
 
 export default defineSchema({
   ...authTables,
+  aiBudget: defineTable({ key: v.string(), calls: v.array(v.number()) })
+    .index("by_key", ["key"]),
   sessions: defineTable({
     userId: v.id("users"),
     expiresAt: v.number(),

@@ -4,9 +4,10 @@ import { fileURLToPath } from "node:url";
 const cli = fileURLToPath(
   new URL("../node_modules/convex/bin/main.js", import.meta.url),
 );
+const production = process.argv.includes("--prod");
 function run(args) {
   // Windows command invocation has no shell interpolation of credential text.
-  const result = spawnSync(process.execPath, [cli, ...args.slice(1)], {
+  const result = spawnSync(process.execPath, [cli, ...args.slice(1), ...(production ? ["--prod"] : [])], {
     encoding: "utf8",
     windowsHide: true,
   });
@@ -32,5 +33,7 @@ if (!list.includes("JWT_PRIVATE_KEY=") || !list.includes("JWKS=")) {
   ]);
   console.log("Auth signing keys configured in Convex. No keys saved to disk.");
 } else console.log("Existing auth signing keys kept.");
-run(["convex", "env", "set", "SITE_URL=http://127.0.0.1:5173"]);
-console.log("Development sign-in URL configured.");
+if (!production) {
+  run(["convex", "env", "set", "SITE_URL=http://127.0.0.1:5173"]);
+  console.log("Development sign-in URL configured.");
+}

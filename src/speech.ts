@@ -33,17 +33,11 @@ export function readAloud(text: string, onEnd?: () => void) {
   );
   utterance.lang = "en-IN";
   utterance.rate = 1;
-  utterance.pitch = 0.7;
+  utterance.pitch = 1;
   const voices = window.speechSynthesis.getVoices();
-  // Prefer an older local synthetic voice for the requested robotic sound.
-  const standard = voices.filter(v => v.localService && v.lang.startsWith("en") && !/natural|neural|online|premium/i.test(v.name));
-  const local =
-    standard.find(v => /zira|hazel|susan/i.test(v.name)) ??
-    standard.find(v => /female|heera|priya|veena/i.test(v.name)) ??
-    standard[0] ??
-    voices.find((v) => v.localService && v.lang.startsWith("en") && /female|zira|samantha|susan|hazel|aria|jenny/i.test(v.name)) ??
-    voices.find((v) => v.localService && v.lang === "en-IN") ??
-    voices.find((v) => v.localService && v.lang.startsWith("en"));
+  // Use a local female voice; prefer natural voices when the device offers one.
+  const female = voices.filter(v => v.localService && v.lang.startsWith("en") && /female|heera|priya|veena|zira|samantha|susan|hazel|aria|jenny/i.test(v.name));
+  const local = female.find(v => /natural|neural/i.test(v.name)) ?? female.find(v => v.lang === "en-IN") ?? female[0] ?? voices.find(v => v.localService && v.lang.startsWith("en"));
   if (!local)
     throw new Error(
       "A local English voice is not available on this device. You can read the answer here.",

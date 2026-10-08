@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { readAloud } from "../src/speech";
 afterEach(() => vi.unstubAllGlobals());
 
-it("prefers a standard local synthetic voice and uses a flatter pitch", () => {
+it("prefers a natural local female voice with a balanced pitch", () => {
   const standard = { name: "Microsoft Zira", lang: "en-US", localService: true };
   const speak = vi.fn();
   Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
@@ -19,6 +19,6 @@ it("prefers a standard local synthetic voice and uses a flatter pitch", () => {
   });
   readAloud("A short reply.");
   expect(speak).toHaveBeenCalledWith(expect.objectContaining({
-    voice: standard, pitch: 0.7, rate: 1, lang: "en-US",
+    voice: expect.objectContaining({ name: "Heera Natural" }), pitch: 1, rate: 1, lang: "en-IN",
   }));
 });

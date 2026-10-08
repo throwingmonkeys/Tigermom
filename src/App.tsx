@@ -15,7 +15,6 @@ import {
   ChevronRight,
   FileText,
   Heart,
-  Leaf,
   LoaderCircle,
   LockKeyhole,
   Menu,
@@ -157,6 +156,13 @@ export default function App() {
     onQuestion: submitQuestion,
   };
   const fileInput = useRef<HTMLInputElement>(null);
+  const pendingReport = useRef<File | null>(null);
+  useEffect(() => {
+    if (!sessionId || !pendingReport.current) return;
+    const file = pendingReport.current;
+    pendingReport.current = null;
+    void upload(file);
+  }, [sessionId]);
   const bottom = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<Id<"sessions"> | null>(null);
   const active = panel === "chat" || panel === "example";
@@ -183,6 +189,7 @@ export default function App() {
       setMessages([]);
       setReports([]);
       setDraft("");
+      pendingReport.current = null;
       setPanel("home");
       setInfo(null);
       setVoiceConsent(false);
@@ -342,11 +349,11 @@ export default function App() {
     if (!file || !sessionId || ending.current || expired) return;
     setError("");
     if (
-      !["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(
+      !["application/pdf", "image/jpeg"].includes(
         file.type,
       )
     ) {
-      setError("Choose a PDF, JPG, PNG, or WebP photo of a written report.");
+      setError("Error uploading your report. Please upload jpeg or pdf only");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -375,7 +382,7 @@ export default function App() {
       setReports((prev) => [...prev, { id, name: file.name }]);
     } catch (e) {
       if (closed.current || sessionRef.current !== sessionId) return;
-      showError(e, "Your report could not be attached. Please try again.");
+      showError(e, "Error uploading your report. Please upload jpeg or pdf only");
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
@@ -477,7 +484,7 @@ export default function App() {
     voice.current.start();
   }
   return (
-    <div className="app-shell">
+    <div className={`app-shell panel-${panel}`}>
       <aside className={`sidebar ${menu ? "open" : ""}`}>
         <a
           href="#"
@@ -643,35 +650,9 @@ export default function App() {
           >
             <section className="welcome-column">
               <div className="welcome-copy">
-                <div className="greeting-mark">
-                  <Heart size={26} strokeWidth={1.4} />
-                </div>
-                <h1>
-                  A little clarity.
-                  <br />A lot more
-                  <br />
-                  confidence.
-                </h1>
-                <p className="intro">
-                  Just back from your doctor?
-                  <br />
-                  Make room for your own questions.
-                </p>
-                <p className="welcome-description">
-                  Let’s make sense of your care, understand your reports, and
-                  find the words for your next appointment. One conversation at
-                  a time.
-                </p>
-              </div>
-              <div className="support-promise">
-                <span className="promise-icon">
-                  <Leaf size={21} />
-                </span>
-                <p>
-                  Warmth first. Evidence always.
-                  <br />
-                  <span>Your choices, your voice.</span>
-                </p>
+                <img className="home-logo" src="/tigermom-logo.jpeg" alt="TigerMom. Be prepared. Be informed. Be in your child's corner." />
+                <h1>Making the right choices for your baby begins here, now. It begins by getting evidence backed answers to all your questions</h1>
+                <p className="intro">Ask Tigermom a question or type it out for her. You can also upload a report for context.</p>
               </div>
               <div className="care-note">
                 <ShieldCheck size={16} />
@@ -703,12 +684,39 @@ export default function App() {
               </div>
               {panel === "home" && (
                 <div className="start-content">
-                  <h2>What’s on your mind?</h2>
+                  <h2>What do you have in mind?</h2>
                   <p>
                     There’s no question too small.
                     <br />
                     Talk for free for 10 minutes. No sign-up needed.
                   </p>
+                  <div className="conversation-actions">
+                  <button
+                    className="primary-button start-button"
+                    disabled={busy || isLoading}
+                    onClick={() => void start(draft)}
+                  >
+                    <AudioLines size={20} /> Talk to Tigermom{" "}
+                    <ArrowRight size={18} />
+                  </button>
+                    <button className="stop-button" disabled>Stop conversation</button>
+                  </div>
+                  <div className="home-question-row">
+                    <textarea aria-label="Your question" placeholder="What do you have in mind?" value={draft} onChange={e => setDraft(e.target.value)} maxLength={3000} rows={3} disabled={busy} />
+                    <label className={`home-upload ${busy ? "disabled" : ""}`}>
+                      <Paperclip size={19} /> Upload report
+                      <input type="file" accept="application/pdf,image/jpeg" disabled={busy} className="upload-file-control" aria-label="Upload report" onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (!["application/pdf", "image/jpeg"].includes(file.type)) {
+                          setError("Error uploading your report. Please upload jpeg or pdf only");
+                          return;
+                        }
+                        pendingReport.current = file;
+                        void start(draft);
+                      }} />
+                    </label>
+                  </div>
                   <div className="starter-list">
                     {starters.map((s, i) => (
                       <button key={s} disabled={busy || isLoading} onClick={() => void start(s)}>
@@ -726,14 +734,6 @@ export default function App() {
                       </button>
                     ))}
                   </div>
-                  <button
-                    className="primary-button start-button"
-                    disabled={busy || isLoading}
-                    onClick={() => void start()}
-                  >
-                    <AudioLines size={20} /> Talk to Tigermom{" "}
-                    <ArrowRight size={18} />
-                  </button>
                   <p className="session-note">
                     <LockKeyhole size={12} /> Reports and chat disappear when your session ends.
                   </p>
@@ -819,8 +819,7 @@ export default function App() {
                     ))}
                     {busy && panel === "chat" && (
                       <div className="thinking">
-                        <LoaderCircle size={16} className="spin" /> Finding a
-                        clear, grounded answer…
+                        <LoaderCircle size={16} className="spin" /> That's a good question. Let me think about that.
                       </div>
                     )}
                     <div ref={bottom} />
@@ -902,10 +901,14 @@ export default function App() {
                           </button>
                         </div>
                       )}
+                      <div className="conversation-actions">
+                        <button className="primary-button" onClick={() => microphone()} disabled={expired || listening}><Mic size={18} /> Talk to Tigermom</button>
+                        <button className="stop-button" disabled={uploading || ending.current} onClick={() => void endConversation()}>Stop conversation</button>
+                      </div>
                       <form className="composer" onSubmit={send}>
                         <textarea
                           aria-label="Your question"
-                          placeholder="Ask anything on your mind…"
+                          placeholder="What do you have in mind?"
                           value={draft}
                           maxLength={3000}
                           onChange={(e) => setDraft(e.target.value)}
@@ -922,7 +925,7 @@ export default function App() {
                           <input
                             ref={fileInput}
                             type="file"
-                            accept="application/pdf,image/jpeg,image/png,image/webp"
+                            accept="application/pdf,image/jpeg"
                             hidden
                             onChange={(e) => void upload(e.target.files?.[0])}
                           />
@@ -967,12 +970,7 @@ export default function App() {
                       {listening && <p className="service-note" role="status">Voice is on. Take your time; pause for 4 seconds when you’re done. Speak to interrupt, or tap the mic to stop.</p>}
                       <div className="end-row">
                         <span>10 minutes. Free and temporary.</span>
-                        <button
-                          disabled={busy || uploading}
-                          onClick={() => void endConversation()}
-                        >
-                          End conversation
-                        </button>
+
                       </div>
                     </div>
                   )}

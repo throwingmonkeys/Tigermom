@@ -1409,3 +1409,35 @@ svg {
     font-size: 13px;
   }
 }
+
+/* DESIGN.md: the supplied logo leads; controls follow the welcome text. */
+:root { background: #fffcf5; }
+.home-logo { display: block; width: min(100%, 360px); height: auto; margin: 0 auto 24px; }
+.welcome-copy h1 { font-size: clamp(26px, 2.4vw, 38px); line-height: 1.25; max-width: 27ch; text-wrap: balance; }
+.welcome-copy .intro { font-size: 16px; margin-top: 20px; }
+.conversation-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 20px; }
+.conversation-actions .start-button { margin: 0; width: auto; flex: 1; }
+.stop-button { padding: 14px 18px; border: 1px solid var(--plum); border-radius: 10px; font-weight: 600; }
+.stop-button:hover:not(:disabled) { background: var(--rose); }
+.home-question-row { display: flex; align-items: stretch; gap: 12px; margin-bottom: 24px; }
+.home-question-row textarea { min-width: 0; flex: 1; width: 100%; padding: 16px; border: 1px solid var(--line); border-radius: 10px; resize: vertical; background: white; color: var(--deep); }
+.home-upload { display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; padding: 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; }
+.home-upload:focus-within { outline: 3px solid var(--focus); outline-offset: 4px; }
+.home-upload.disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 700px) {
+  .home-logo { width: min(100%, 260px); }
+  .workspace .welcome-column { display: block; }
+  .workspace .welcome-copy h1 { font-size: 28px; line-height: 1.3; }
+  .conversation-workspace .welcome-column { display: none; }
+  .home-question-row { flex-direction: column; }
+}
+.panel-home .workspace { display: flex; flex-direction: column; max-width: 850px; gap: 28px; padding-top: 32px; }
+.panel-home .welcome-copy { text-align: center; }
+.panel-home .welcome-copy h1 { max-width: 38ch; margin-inline: auto; }
+.panel-home .welcome-column { padding: 0; }
+.panel-home .care-note { margin-top: 18px; }
+.panel-home .conversation-header { display: none; }
+.panel-home .start-content { padding-top: 28px; }
+.home-upload { position: relative; }
+.upload-file-control { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 700px) { .panel-home .workspace { padding: 24px 18px; } }

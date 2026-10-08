@@ -124,7 +124,7 @@ describe("Conversation screens", () => {
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
     expect(screen.getByText("Help me prepare for my visit")).toBeDefined();
     await user.click(
-      screen.getByRole("button", { name: "End conversation" }),
+      screen.getByRole("button", { name: "Stop conversation" }),
     );
     await waitFor(() =>
       expect(state.finish).toHaveBeenCalledWith({ sessionId: "session-test" }),
@@ -180,7 +180,7 @@ describe("Conversation screens", () => {
     await user.type(await screen.findByRole("textbox", { name: "Your question" }), "Private unsent question");
     await act(async () => { window.dispatchEvent(new Event("pagehide")); });
     expect(state.finish).toHaveBeenCalledWith({ sessionId: "session-test" });
-    expect(screen.queryByRole("textbox", { name: "Your question" })).toBeNull();
+    expect((screen.getByRole("textbox", { name: "Your question" }) as HTMLTextAreaElement).value).toBe("");
     await user.click(screen.getByRole("button", { name: /Talk to Tigermom/ }));
     expect((await screen.findByRole("textbox", { name: "Your question" }) as HTMLTextAreaElement).value).toBe("");
   });
@@ -275,6 +275,6 @@ describe("Conversation screens", () => {
     await user.click(screen.getByRole("button", { name: /Talk to Tigermom/ }));
     await act(async () => { window.dispatchEvent(new Event("pagehide")); resolveBegin("cancelled-session"); });
     expect(state.finish).toHaveBeenCalledWith({ sessionId: "cancelled-session" });
-    expect(screen.queryByRole("textbox", { name: "Your question" })).toBeNull();
+    expect((screen.getByRole("textbox", { name: "Your question" }) as HTMLTextAreaElement).value).toBe("");
   });
 });

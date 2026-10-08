@@ -21,11 +21,13 @@ let sessionId;
 try {
   sessionId = await guest.mutation(api.sessions.begin, {});
   const reply = await guest.action(api.conversation.reply, {
-    sessionId, text: 'My doctor wrote "Bring your previous reports." What does this wording mean, and what questions could I ask?', history: [],
+    sessionId, text: 'What is the difference between induction and augmentation of labour? Explain briefly using ACOG or FOGSI, and give me one question for my doctor.', history: [],
   });
   if (!reply.text.trim() || reply.text === "Busy right now. Try again in a few minutes.")
     throw new Error("Live AI returned no usable reply.");
-  console.log("Live guest session received an AI reply.");
+  if (!reply.sources.length || reply.text.split(/\s+/).length > 90)
+    throw new Error("Live reply was missing checked sources or was too long.");
+  console.log("Live guest session received a short AI reply with checked sources.");
 } finally {
   if (sessionId) await guest.mutation(api.sessions.finish, { sessionId });
   await guest.action(api.auth.signOut, {});

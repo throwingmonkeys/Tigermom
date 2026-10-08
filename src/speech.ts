@@ -29,10 +29,15 @@ export function readAloud(text: string) {
     text.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/[*#]/g, ""),
   );
   utterance.lang = "en-IN";
-  utterance.rate = 0.94;
+  utterance.rate = 1;
+  utterance.pitch = 0.7;
   const voices = window.speechSynthesis.getVoices();
+  // Prefer an older local synthetic voice for the requested robotic sound.
+  const standard = voices.filter(v => v.localService && v.lang.startsWith("en") && !/natural|neural|online|premium/i.test(v.name));
   const local =
-    voices.find((v) => v.localService && v.lang === "en-IN" && /female|heera|neerja|priya|veena/i.test(v.name)) ??
+    standard.find(v => /zira|hazel|susan/i.test(v.name)) ??
+    standard.find(v => /female|heera|priya|veena/i.test(v.name)) ??
+    standard[0] ??
     voices.find((v) => v.localService && v.lang.startsWith("en") && /female|zira|samantha|susan|hazel|aria|jenny/i.test(v.name)) ??
     voices.find((v) => v.localService && v.lang === "en-IN") ??
     voices.find((v) => v.localService && v.lang.startsWith("en"));
@@ -41,5 +46,6 @@ export function readAloud(text: string) {
       "A local English voice is not available on this device. You can read the answer here.",
     );
   utterance.voice = local;
+  utterance.lang = local.lang;
   window.speechSynthesis.speak(utterance);
 }

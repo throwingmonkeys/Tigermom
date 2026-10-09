@@ -16,13 +16,11 @@ import {
   FileText,
   Heart,
   LoaderCircle,
-  LockKeyhole,
   Menu,
   MessageCircle,
   Mic,
   Paperclip,
   Send,
-  ShieldCheck,
   Sparkles,
   Square,
   Volume2,
@@ -53,22 +51,6 @@ const testimonials = [
   { label: "Tigermom, 6m pregnant", quote: "It feels good to get an answer without taking an appointment" },
   { label: "Tigermom, 3m pregnant", quote: "I now know what to ask my doctor" },
   { label: "Tigermom, 9m pregnant", quote: "Tigermom beats having to read up 10 websites to answer a question" },
-];
-const example: Message[] = [
-  {
-    role: "user",
-    text: "My doctor made me feel worried about being pregnant at 35.",
-  },
-  {
-    role: "assistant",
-    text: "That sounds hurtful when you were looking for support. You deserve a clear explanation, without being made to feel guilty.\n\nBeing 35 is not a reason to feel ashamed of your pregnancy. Age is one part of the picture; your own health and pregnancy history also matter.\n\nYou could ask: “What does my age mean for my care, given my own health?”\n\nDid your doctor explain a particular concern?",
-    sources: [
-      {
-        title: "ACOG · Pregnancy after 35",
-        url: "https://www.acog.org/womens-health/faqs/having-a-baby-after-age-35-how-aging-affects-fertility-and-pregnancy",
-      },
-    ],
-  },
 ];
 const feedbackReasons = [
   "I feel clearer",
@@ -116,7 +98,7 @@ export default function App() {
   const authToken = useAuthToken();
   const removeReport = useMutation(api.reports.remove);
   const [panel, setPanel] = useState<
-    "home" | "chat" | "example" | "feedback" | "thanks"
+    "home" | "chat" | "feedback" | "thanks"
   >("home");
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -138,7 +120,7 @@ export default function App() {
   const [expired, setExpired] = useState(false);
   const [pendingStart, setPendingStart] = useState(false);
   const opening = useRef(false);
-  const [info, setInfo] = useState<"sources" | "privacy" | null>(
+  const [info, setInfo] = useState<"sources" | null>(
     null,
   );
   const [useful, setUseful] = useState<boolean | null>(null);
@@ -171,7 +153,7 @@ export default function App() {
   }, [sessionId]);
   const bottom = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<Id<"sessions"> | null>(null);
-  const active = panel === "chat" || panel === "example";
+  const active = panel === "chat";
   useEffect(() => {
     sessionRef.current = sessionId;
   }, [sessionId]);
@@ -506,11 +488,6 @@ export default function App() {
         >
           <Brand />
         </a>
-        <p className="sidebar-note">
-          Your pregnancy.
-          <br />
-          Your voice.
-        </p>
         <nav aria-label="Main navigation">
           <button
             className={`nav-item ${!info ? "selected" : ""}`}
@@ -530,19 +507,7 @@ export default function App() {
           >
             <BookOpen size={19} /> Our sources
           </button>
-          <button
-            className={`nav-item ${info === "privacy" ? "selected" : ""}`}
-            onClick={() => {
-              setInfo("privacy");
-              setMenu(false);
-            }}
-          >
-            <ShieldCheck size={19} /> Your privacy
-          </button>
         </nav>
-        <div className="sidebar-bottom">
-          <span className="made-for">Made with care, for you.</span>
-        </div>
       </aside>
       {menu && (
         <button
@@ -563,10 +528,6 @@ export default function App() {
             </button>
             <Brand small />
           </div>
-          <span className="topbar-label">A space to feel heard</span>
-          <div className="private-badge">
-            <LockKeyhole size={13} /> A private conversation
-          </div>
         </header>
         {info ? (
           <section className="info-page">
@@ -579,66 +540,15 @@ export default function App() {
                 <h1>Sources</h1>
                 <p className="intro">{curationMessage}</p>
                 <div className="source-list">
-                  {referenceSources.map(({ title: name, description: desc, url }) => (
+                  {referenceSources.map(({ title: name, url }) => (
                     <a key={name} href={url} target="_blank" rel="noreferrer">
                       <div>
                         <h3>{name}</h3>
-                        <p>{desc}</p>
+
                       </div>
                       <ArrowRight size={19} />
                     </a>
                   ))}
-                </div>
-                <p className="fine-print">
-                  These are reference sources, not endorsements or partners.
-                  Individual answers must link to the specific material used.
-                  News is included only when relevant and identified by date.
-                </p>
-              </>
-            )}
-            {info === "privacy" && (
-              <>
-                <ShieldCheck className="page-icon" />
-                <h1>
-                  Your story
-                  <br />
-                  belongs to you.
-                </h1>
-                <p className="intro">
-                  Your free conversation is temporary. It is not saved as a
-                  personal history.
-                </p>
-                <div className="prose">
-                  <h3>What we keep</h3>
-                  <p>
-                    No phone number or verification code is needed. Convex keeps
-                    a guest sign-in record to protect access to your temporary
-                    conversation.
-                  </p>
-                  <h3>What we delete</h3>
-                  <p>
-                    Ending your conversation deletes its temporary reports and
-                    clears the chat from this page. Conversation messages are
-                    not stored in our database. Each free session ends after
-                    10 minutes. If a tab closes unexpectedly,
-                    temporary uploads expire within five minutes after the page
-                    stops checking in, for example when it is closed or left in
-                    the background.
-                  </p>
-                  <h3>Who processes your information</h3>
-                  <p>
-                    Convex runs the app. Once connected, the configured AI
-                    service will process your questions and any reports you
-                    choose to attach. No SMS service is used in this first
-                    version. Provider setup and its data handling must be
-                    confirmed before real use.
-                  </p>
-                  <h3>Your voice</h3>
-                  <p>
-                    Voice input is optional and handled by your browser, which
-                    may use its own speech service. You will be asked before
-                    using it. Typing is always available.
-                  </p>
                 </div>
               </>
             )}
@@ -653,13 +563,6 @@ export default function App() {
                 <h1>Making the right choices for your baby begins by getting evidence backed answers to all your questions</h1>
                 <p className="intro">Ask Tigermom a question. No sign-up needed. Upload a report for context.</p>
               </div>
-              <div className="care-note">
-                <ShieldCheck size={16} />
-                <p>
-                  I’m an AI guide, here to help you understand. Your care
-                  provider is here to care for you.
-                </p>
-              </div>
             </section>
             <section
               className="conversation-column"
@@ -671,11 +574,6 @@ export default function App() {
                 </div>
                 <div>
                   <h2>Tigermom</h2>
-                  <p>
-                    {panel === "example"
-                      ? "A sample of how we talk"
-                      : "Your AI guide. Here to listen."}
-                  </p>
                 </div>
                 <span className="conversation-flower">
                   <Sparkles size={20} />
@@ -683,12 +581,6 @@ export default function App() {
               </div>
               {panel === "home" && (
                 <div className="start-content">
-                  <h2>What do you have in mind?</h2>
-                  <p>
-                    There’s no question too small.
-                    <br />
-                    Talk for free for 10 minutes. No sign-up needed.
-                  </p>
                   <div className="conversation-actions">
                   <button
                     className="primary-button start-button"
@@ -733,43 +625,17 @@ export default function App() {
                       </button>
                     ))}
                   </div>
-                  <p className="session-note">
-                    <LockKeyhole size={12} /> Reports and chat disappear when your session ends.
-                  </p>
-                  {availability?.ai === false && <p className="service-note" role="status">Live AI replies are paused. You can read a sample conversation or explore a private session.</p>}
-                  <div className="sample-entry">
-                    <span>Want to get a feel for Tigermom?</span>
-                    <button
-                      onClick={() => {
-                        setPanel("example");
-                        setError("");
-                      }}
-                    >
-                      Read a sample conversation <ArrowRight size={14} />
-                    </button>
-                  </div>
+                  {availability?.ai === false && <p className="service-note" role="status">Live AI replies are paused.</p>}
                 </div>
               )}
               {active && (
                 <>
                   <div className="chat-messages" aria-live="polite">
-                    {panel === "example" && (
-                      <div className="sample-label">
-                        <BookOpen size={14} /> Written sample · not a live AI
-                        conversation
-                      </div>
-                    )}
-                    {(panel === "example" ? example : messages).length ===
+                    {messages.length ===
                       0 && (
-                      <div className="chat-welcome">
-                        <h3>I’m glad you’re here.</h3>
-                        <p>
-                          What would you like to make sense of today? You can
-                          ask a question, or attach a written report.
-                        </p>
-                      </div>
+                      <div className="chat-welcome"><p>What do you have in mind?</p></div>
                     )}
-                    {(panel === "example" ? example : messages).map((m, i) => (
+                    {messages.map((m, i) => (
                       <article className={`message ${m.role}`} key={i}>
                         <span className="message-person">
                           {m.role === "user" ? "You" : "Tigermom"}
@@ -780,7 +646,7 @@ export default function App() {
                         {m.sources && m.sources.length > 0 && (
                           <div className="answer-sources">
                             <span>
-                              <BookOpen size={12} /> Sources you can check
+                              <BookOpen size={12} /> Sources
                             </span>
                             {m.sources.map((s) => (
                               <a
@@ -823,26 +689,6 @@ export default function App() {
                     )}
                     <div ref={bottom} />
                   </div>
-                  {panel === "example" ? (
-                    <div className="sample-footer">
-                      <p>More clarity. More room for your voice.</p>
-                      <button
-                        className="primary-button"
-                        onClick={() => void start()}
-                      >
-                        Talk to Tigermom <ArrowRight size={17} />
-                      </button>
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          setPanel("home");
-                          setError("");
-                        }}
-                      >
-                        Back to home
-                      </button>
-                    </div>
-                  ) : (
                     <div className="composer-area">
                       {availability?.ai === false && <p className="service-note" role="status">Live AI replies are paused. Your questions won’t be sent to AI.</p>}
                       <div className="session-controls">
@@ -883,8 +729,7 @@ export default function App() {
                       {voiceDialog && !listening && (
                         <div className="voice-consent">
                           <p>
-                            Your browser may send audio to its speech service.
-                            Voice stays on until you stop it or end the conversation. Your question is sent after a four-second pause. You can speak to interrupt Tigermom, or keep typing.
+                            Your browser may send audio to its speech service. Voice stays on until you stop it.
                           </p>
                           <button
                             onClick={() => {
@@ -967,12 +812,7 @@ export default function App() {
                         </div>
                       </form>
                       {listening && <p className="service-note" role="status">Voice is on. Take your time; pause for 4 seconds when you’re done. Speak to interrupt, or tap the mic to stop.</p>}
-                      <div className="end-row">
-                        <span>10 minutes. Free and temporary.</span>
-
-                      </div>
                     </div>
-                  )}
                 </>
               )}
               {panel === "feedback" && (
@@ -980,17 +820,8 @@ export default function App() {
                   <span className="done-mark">
                     <Check size={26} />
                   </span>
-                  <h2>A little clearer?</h2>
                   {timeEnded && <p>Your free 10 minutes are up.</p>}
-                  <p>
-                    Your conversation has ended and your temporary reports have
-                    been deleted.
-                  </p>
                   <h3>Was this conversation useful?</h3>
-                  <p className="reflection-note">
-                    A private check-in. Your answers stay on this page and are
-                    not saved.
-                  </p>
                   <div className="feedback-choice">
                     <button
                       className={useful === true ? "chosen" : ""}
@@ -1045,12 +876,11 @@ export default function App() {
                   <div className="source-list">
                     {referenceSources.map((source) => (
                       <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
-                        <div><h3>{source.title}</h3><p>{source.description}</p></div>
+                        <div><h3>{source.title}</h3></div>
                         <ArrowRight size={19} />
                       </a>
                     ))}
                   </div>
-                  <p className="fine-print">Reference sources, not endorsements. Each live answer must link to the specific evidence used.</p>
                   <button
                     className="primary-button"
                     onClick={() => {
@@ -1084,14 +914,6 @@ export default function App() {
                   </button>
                 </div>
               )}
-              <div className="conversation-bottom">
-                <span>
-                  <ShieldCheck size={13} /> Informed, prepared, confident.
-                </span>
-                <button onClick={() => setInfo("sources")}>
-                  About our sources <ArrowRight size={12} />
-                </button>
-              </div>
             </section>
             {panel === "home" && (
               <section className="testimonials" aria-labelledby="testimonials-title">
@@ -1108,10 +930,6 @@ export default function App() {
             )}
           </div>
         )}
-        <footer className="page-footer">
-          <span>Care that begins with listening.</span>
-          <span>For urgent concerns, contact your care provider.</span>
-        </footer>
       </main>
     </div>
   );

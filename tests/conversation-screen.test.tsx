@@ -70,25 +70,16 @@ describe("Conversation screens", () => {
     expect(screen.getAllByRole("article", { name: /Tigermom, .* pregnant/ })).toHaveLength(3);
     expect(screen.getByText("I now know what to ask my doctor")).toBeDefined();
     expect(screen.getByRole("button", { name: "Talk to Tigermom" })).toBeDefined();
-    await user.click(screen.getByRole("button", { name: /Read a sample conversation/ }));
-    expect(screen.getByRole("button", { name: "Talk to Tigermom" })).toBeDefined();
-    expect(screen.queryByRole("button", { name: /Start your conversation/ })).toBeNull();
+    expect(screen.queryByText("A space to feel heard")).toBeNull();
+    expect(screen.queryByText("There?s no question too small.")).toBeNull();
   });
-  it("labels the sample and offers sources without pretending to run AI", async () => {
+  it("opens the requested Sources page", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(
-      screen.getByRole("button", { name: /Read a sample conversation/ }),
-    );
-    expect(screen.getByText(/Written sample/)).toBeDefined();
-    expect(
-      screen
-        .getByRole("link", { name: /ACOG · Pregnancy after 35/ })
-        .getAttribute("href"),
-    ).toContain("acog.org/womens-health/faqs/");
-    expect(state.reply).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Our sources" }));
+    expect(screen.getByText(/Tigermom curates its responses/)).toBeDefined();
     expect(screen.getByRole("link", { name: /FOGSI/ })).toBeDefined();
+    expect(state.reply).not.toHaveBeenCalled();
   });
   it("starts a private guest conversation without asking for a phone or code", async () => {
     const user = userEvent.setup();

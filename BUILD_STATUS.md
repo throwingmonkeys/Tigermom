@@ -43,3 +43,7 @@ Removed the 40-60-word and three-sentence constraints. Answers now include a dir
 ## October 9 design copy update
 
 Applied revised welcome copy, all three named sample questions, supplied anonymous testimonials in square panels, and the Sources curation message before linked resources. Existing voice/session/survey behavior retained. Build and 31 automated checks pass; no browser connected for visual verification.
+
+## October 9 remove extra page copy
+
+Removed unrequested slogans, duplicate welcome text, promotional/footer copy, source descriptions and disclaimers, written demo, and extra privacy page. Retained DESIGN.md wording, navigation/control labels, survey, concise voice consent/status, session timer and recovery messages. AI reply depth and safety boundaries unchanged.

@@ -47,3 +47,7 @@ Applied revised welcome copy, all three named sample questions, supplied anonymo
 ## October 9 remove extra page copy
 
 Removed unrequested slogans, duplicate welcome text, promotional/footer copy, source descriptions and disclaimers, written demo, and extra privacy page. Retained DESIGN.md wording, navigation/control labels, survey, concise voice consent/status, session timer and recovery messages. AI reply depth and safety boundaries unchanged.
+
+## October 9 compact home panels
+
+Removed the landing conversation panel minimum height and sample-list bottom margin. Testimonial panels now fit their content with compact quote/label spacing instead of forced square heights. No text or behavior changes.

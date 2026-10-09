@@ -44,9 +44,15 @@ const referenceSources = [
   { title: "Ina May Gaskin", description: "Clearly attributed childbirth perspectives", url: "https://inamay.com/" },
 ];
 const starters = [
-  "What does my doctor's advice mean for my choices?",
+  "How long does childbirth take?",
+  "Why is skin to skin with the newborn baby important?",
   "Can you help me understand my report?",
-  "What should I ask at my next appointment?",
+];
+const curationMessage = "Tigermom curates its responses from the following resources. This list while not exhaustive, is a robust source of evidence when it comes to pregnancy and childbirth related questions.";
+const testimonials = [
+  { label: "Tigermom, 6m pregnant", quote: "It feels good to get an answer without taking an appointment" },
+  { label: "Tigermom, 3m pregnant", quote: "I now know what to ask my doctor" },
+  { label: "Tigermom, 9m pregnant", quote: "Tigermom beats having to read up 10 websites to answer a question" },
 ];
 const example: Message[] = [
   {
@@ -570,15 +576,8 @@ export default function App() {
             {info === "sources" && (
               <>
                 <BookOpen className="page-icon" />
-                <h1>
-                  Confidence starts
-                  <br />
-                  with clarity.
-                </h1>
-                <p className="intro">
-                  You deserve explanations you can understand, and sources you
-                  can check.
-                </p>
+                <h1>Sources</h1>
+                <p className="intro">{curationMessage}</p>
                 <div className="source-list">
                   {referenceSources.map(({ title: name, description: desc, url }) => (
                     <a key={name} href={url} target="_blank" rel="noreferrer">
@@ -651,8 +650,8 @@ export default function App() {
             <section className="welcome-column">
               <div className="welcome-copy">
                 <img className="home-logo" src="/tigermom-logo.jpeg" alt="TigerMom. Be prepared. Be informed. Be in your child's corner." />
-                <h1>Making the right choices for your baby begins here, now. It begins by getting evidence backed answers to all your questions</h1>
-                <p className="intro">Ask Tigermom a question or type it out for her. You can also upload a report for context.</p>
+                <h1>Making the right choices for your baby begins by getting evidence backed answers to all your questions</h1>
+                <p className="intro">Ask Tigermom a question. No sign-up needed. Upload a report for context.</p>
               </div>
               <div className="care-note">
                 <ShieldCheck size={16} />
@@ -1042,7 +1041,7 @@ export default function App() {
                 <div className="feedback-content">
                   <Heart size={32} className="thank-heart" />
                   <h2>Sources</h2>
-                  <p>Your conversation is cleared. These reference sources are here whenever you want to learn more.</p>
+                  <p>{curationMessage}</p>
                   <div className="source-list">
                     {referenceSources.map((source) => (
                       <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
@@ -1096,14 +1095,12 @@ export default function App() {
             </section>
             {panel === "home" && (
               <section className="testimonials" aria-labelledby="testimonials-title">
-                <h2 id="testimonials-title">From other Tigermoms</h2>
-                <p>Real experiences, shared anonymously and with permission.</p>
+                <h2 id="testimonials-title">Testimonials</h2>
                 <div className="testimonial-tiles">
-                  {["Understanding advice", "Making sense of a report", "Preparing questions"].map((topic) => (
-                    <article className="testimonial-tile" key={topic} aria-label={`${topic} testimonial placeholder`}>
-                      <h3>{topic}</h3>
-                      <p>Testimonial coming soon</p>
-                      <span>No real quote has been added yet.</span>
+                  {testimonials.map(({ label, quote }) => (
+                    <article className="testimonial-tile" key={label} aria-label={label}>
+                      <blockquote>{quote}</blockquote>
+                      <p>{label}</p>
                     </article>
                   ))}
                 </div>

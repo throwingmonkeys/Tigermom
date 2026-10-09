@@ -16,7 +16,7 @@ The interface and Convex foundation are implemented. The app runs at http://127.
 - Replies target 40–60 words and three sentences with a calm, direct, empowering tone. Following the updated DESIGN.md, speech prefers a natural local female voice, balanced pitch (1), and normal speed; actual voice availability and sound depend on the device and remain unheard here.
 - The hosted production homepage loaded, anonymous sign-in and a new session worked, and a real AI reply arrived. The synthetic test session was ended and signed out. These are network checks; no browser was connected for visual or audio verification.
 - After consent, voice mode stays on between turns, keeps partial sentences across recognition restarts, and sends after four seconds of quiet. New recognized words stop spoken replies; matching reply fragments are ignored to reduce speaker echo. Follow-ups spoken while an answer is pending are kept and sent when it finishes; that older answer is not spoken over the new question. Stopping voice or ending/closing a session cancels recognition and pending voice timers. Spoken replies can be switched off separately. These paths are checked with simulated speech, not a real microphone or speaker; device echo and browser recognition delays still need a live audio check.
-- Three testimonial tiles are visibly marked as placeholders until real, permissioned feedback is available. Button labels follow PRODUCT.md, including the sample conversation start action.
+- Three testimonial tiles use the quotes and anonymous labels supplied in the updated DESIGN.md. Button labels follow PRODUCT.md, including the sample conversation start action.
 
 ## Remaining
 
@@ -39,3 +39,7 @@ Applied the supplied DESIGN.md: tiger logo, exact welcome text, top-to-bottom la
 ## October 9 reply perspective update
 
 Removed the 40-60-word and three-sentence constraints. Answers now include a direct answer, relevant evidence-backed context or perspective, evidence limits when useful, and one doctor question where appropriate. Search and final composition each stay capped at 500 output tokens; both still reserve the shared 100-call hourly budget. Retrieval asks for current guidance and source/date attribution. A real dev induction question returned 173 words with WHO, ACOG and research links after strengthening instructions against mixing older guidance with newer claims. This sample is proof of the tested reply, not a guarantee of every answer.
+
+## October 9 design copy update
+
+Applied revised welcome copy, all three named sample questions, supplied anonymous testimonials in square panels, and the Sources curation message before linked resources. Existing voice/session/survey behavior retained. Build and 31 automated checks pass; no browser connected for visual verification.

@@ -1441,3 +1441,7 @@ svg {
 .home-upload { position: relative; }
 .upload-file-control { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-width: 700px) { .panel-home .workspace { padding: 24px 18px; } }
+.testimonial-tile { aspect-ratio: 1; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+.testimonial-tile blockquote { margin: 0 0 18px; font-size: 15px; line-height: 1.65; }
+.testimonial-tile > p { font-size: 12px; font-weight: 600; margin: 0; }
+@media (max-width: 700px) { .testimonial-tile { aspect-ratio: 1; width: min(100%, 280px); margin-inline: auto; } }

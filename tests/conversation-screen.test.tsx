@@ -64,11 +64,11 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); delete window.SpeechRecognition; });
 describe("Conversation screens", () => {
-  it("shows testimonial tiles honestly and uses the requested start label", async () => {
+  it("shows supplied testimonials and uses the requested start label", async () => {
     const user = userEvent.setup();
     render(<App />);
-    expect(screen.getAllByRole("article", { name: /testimonial placeholder/ })).toHaveLength(3);
-    expect(screen.getAllByText("Testimonial coming soon")).toHaveLength(3);
+    expect(screen.getAllByRole("article", { name: /Tigermom, .* pregnant/ })).toHaveLength(3);
+    expect(screen.getByText("I now know what to ask my doctor")).toBeDefined();
     expect(screen.getByRole("button", { name: "Talk to Tigermom" })).toBeDefined();
     await user.click(screen.getByRole("button", { name: /Read a sample conversation/ }));
     expect(screen.getByRole("button", { name: "Talk to Tigermom" })).toBeDefined();

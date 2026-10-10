@@ -64,11 +64,11 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); delete window.SpeechRecognition; });
 describe("Conversation screens", () => {
-  it("shows supplied testimonials and uses the requested start label", async () => {
+  it("uses the requested start label without testimonials in v1", async () => {
     const user = userEvent.setup();
     render(<App />);
-    expect(screen.getAllByRole("article", { name: /Tigermom, .* pregnant/ })).toHaveLength(3);
-    expect(screen.getByText("I now know what to ask my doctor")).toBeDefined();
+    expect(screen.queryByRole("heading", { name: "Testimonials" })).toBeNull();
+    expect(screen.queryByText("I now know what to ask my doctor")).toBeNull();
     expect(screen.getByRole("button", { name: "Talk to Tigermom" })).toBeDefined();
     expect(screen.queryByText("A space to feel heard")).toBeNull();
     expect(screen.queryByText("There?s no question too small.")).toBeNull();

@@ -6,7 +6,7 @@ The interface and Convex foundation are implemented. The app runs at http://127.
 
 - Development Convex backend compiles and pushes.
 - Frontend compiles and builds.
-- Thirty-one automated checks pass, including session cleanup, AI quotas, source filtering, personal-result redirection, and hands-free voice timing, restarts, interruption, queued follow-ups, permission errors, and cleanup.
+- Thirty-three automated checks pass, including session cleanup, AI quotas, source filtering, personal-result redirection, and hands-free voice timing, restarts, interruption, queued follow-ups, permission errors, and cleanup.
 - Real cloud rejects unsigned session creation and report upload; auth signing-key endpoint works.
 - No conversation-history table or browser persistence was added. Free-session report cleanup is tested.
 - Guest sign-in, synthetic report upload, unauthorized-access rejection, cleanup, and sign-out work against the real cloud. No phone number or code is collected; no SMS service is needed.
@@ -51,3 +51,7 @@ Removed unrequested slogans, duplicate welcome text, promotional/footer copy, so
 ## October 9 compact home panels
 
 Removed the landing conversation panel minimum height and sample-list bottom margin. Testimonial panels now fit their content with compact quote/label spacing instead of forced square heights. No text or behavior changes.
+
+## October 10 design update
+
+Removed testimonials from v1 as requested in DESIGN.md; retained current typography and colours. Personal-result interpretation, explicit diagnosis and tell-me-what-to-do requests return the specified care-provider wording in Convex without a provider call. Model instructions use the same wording for other personal-advice requests. All 33 checks pass; a real dev diagnosis request returned the exact response. General sourced-question behavior retained.

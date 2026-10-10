@@ -21,7 +21,7 @@ try {
   if (reply.text === "Busy right now. Try again in a few minutes.")
     throw new Error("The development AI test returned the busy message.");
   if (process.argv.includes("--boundary")) {
-    if (!reply.text.includes("I can’t judge your personal result")) throw new Error("Personal result boundary was not enforced.");
+    if (!reply.text.startsWith("This is something that you should discuss with your care provider.")) throw new Error("Personal result boundary was not enforced.");
   } else if (!reply.sources.length) throw new Error("The development AI test returned no checked sources.");
   if (reply.text.split(/\s+/).length > 230) throw new Error("The development reply was too long.");
 } finally {

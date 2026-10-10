@@ -47,11 +47,6 @@ const starters = [
   "Can you help me understand my report?",
 ];
 const curationMessage = "Tigermom curates its responses from the following resources. This list while not exhaustive, is a robust source of evidence when it comes to pregnancy and childbirth related questions.";
-const testimonials = [
-  { label: "Tigermom, 6m pregnant", quote: "It feels good to get an answer without taking an appointment" },
-  { label: "Tigermom, 3m pregnant", quote: "I now know what to ask my doctor" },
-  { label: "Tigermom, 9m pregnant", quote: "Tigermom beats having to read up 10 websites to answer a question" },
-];
 const feedbackReasons = [
   "I feel clearer",
   "I feel more confident",
@@ -915,19 +910,6 @@ export default function App() {
                 </div>
               )}
             </section>
-            {panel === "home" && (
-              <section className="testimonials" aria-labelledby="testimonials-title">
-                <h2 id="testimonials-title">Testimonials</h2>
-                <div className="testimonial-tiles">
-                  {testimonials.map(({ label, quote }) => (
-                    <article className="testimonial-tile" key={label} aria-label={label}>
-                      <blockquote>{quote}</blockquote>
-                      <p>{label}</p>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            )}
           </div>
         )}
       </main>

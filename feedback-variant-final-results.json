@@ -1,0 +1,10 @@
+[
+  {
+    "question": "You don't know how long child birth takes? You had told me two days ago!",
+    "reply": {
+      "reviewDiagnostic": "{\"decision\":\"revise\",\"failedChecks\":[],\"words\":71,\"finish\":\"complete\",\"sources\":3,\"citationsMissing\":false,\"unavailableOrganisation\":[\"NICE\"],\"invalidReference\":false,\"consultationMissing\":false}",
+      "sources": [],
+      "text": "I’m sorry I couldn’t give you a clear, well-supported answer. I don’t want to guess."
+    }
+  }
+]

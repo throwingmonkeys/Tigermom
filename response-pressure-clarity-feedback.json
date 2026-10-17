@@ -1,0 +1,75 @@
+[
+  {
+    "id": "accountability",
+    "question": "Why couldn't you have said that?",
+    "review": "Accept feedback briefly and warmly, without asking her to rephrase or restarting a medical lesson.",
+    "history": [
+      {
+        "role": "user",
+        "text": "What does antenatal mean?"
+      },
+      {
+        "role": "assistant",
+        "text": "Antenatal means during pregnancy."
+      }
+    ],
+    "sources": [],
+    "text": "You’re right — I should have said it more clearly and directly from the start.",
+    "words": 15,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "repair_criticism",
+    "question": "That's confusing",
+    "review": "Acknowledge unclear explanation, then explain the original term plainly with relevant evidence; no request to rephrase.",
+    "history": [
+      {
+        "role": "user",
+        "text": "What does antenatal mean?"
+      },
+      {
+        "role": "assistant",
+        "text": "It refers to antenatal care in the antenatal period."
+      }
+    ],
+    "sources": [
+      {
+        "title": "folder.indd",
+        "url": "https://www.who.int/docs/default-source/reproductive-health/maternal-health/anc.pdf?utm_source=openai"
+      },
+      {
+        "title": "Dictionary | ACOG",
+        "url": "https://www.acog.org/womens-health/dictionary?utm_source=openai"
+      }
+    ],
+    "text": "Antenatal means during pregnancy [1]. “Prenatal” is used the same way here and also means care during pregnancy [2]. So when you see “antenatal care,” it means care you get while you are pregnant [1][2].",
+    "words": 35,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "clear_midwifery",
+    "question": "What does continuity of midwifery care actually mean? Please explain in plain words.",
+    "review": "Explain the concept directly in everyday words, with a relevant citation; no catalogue of studies or birth-plan recommendation.",
+    "history": [],
+    "sources": [
+      {
+        "title": "WHO recommendations on",
+        "url": "https://iris.who.int/bitstream/handle/10665/352658/9789240045989-eng.pdf?utm_source=openai"
+      },
+      {
+        "title": "Are midwife continuity of care models versus other models of care for childbearing women better for women and their babies? | Cochrane",
+        "url": "https://www.cochrane.org/evidence/CD004667_are-midwife-continuity-care-models-versus-other-models-care-childbearing-women-better-women-and?utm_source=openai"
+      },
+      {
+        "title": "Midwifery Models of Care: The Choice for All Women | International Confederation of Midwives",
+        "url": "https://internationalmidwives.org/resources/midwifery-models-of-care-the-choice-for-all-women/?utm_source=openai"
+      }
+    ],
+    "text": "Continuity of midwifery care means you are looked after by the same midwife, or a small known team, through pregnancy, labour, birth and after the baby is born, instead of being passed from one unfamiliar person to another [1]. WHO says it is a midwife-led model and that it depends on local setting [1]. Cochrane says it probably helps with several outcomes, but not every one [2]. ICM describes it as care built around an ongoing relationship [3].",
+    "words": 78,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  }
+]

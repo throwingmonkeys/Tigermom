@@ -1,0 +1,17 @@
+{
+  "preview": "https://animated-shepherd-226.ap-southeast-2.convex.site",
+  "status": 200,
+  "contentType": "image/png",
+  "usesNewImage": true,
+  "exactSuppliedImage": true,
+  "tests": "218 passed",
+  "build": "passed",
+  "visualBrowserCheck": "unavailable",
+  "production": "unchanged",
+  "changedFiles": {
+    "public/tigermom-logo.png": "Exact supplied PNG image.",
+    "public/tigermom-logo.jpeg": "Removed the previous image.",
+    "src/App.tsx": "Home logo and sidebar wordmark use the new image.",
+    "DESIGN.md": "Updated the approved logo path."
+  }
+}

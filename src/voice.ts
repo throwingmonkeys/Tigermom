@@ -107,8 +107,8 @@ export class VoiceConversation {
     const recognition = this.options.createRecognition();
     this.recognition = recognition;
     recognition.lang = "en-IN";
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.interimResults = false;
     recognition.onspeechstart = () => {
       if (!this.enabled || this.recognition !== recognition) return;
       this.speechActive = true;
@@ -125,7 +125,7 @@ export class VoiceConversation {
       if (!this.enabled || this.recognition !== recognition) return;
       let received = false;
       for (let index = event.resultIndex ?? 0; index < event.results.length; index++) {
-        if (index < this.consumedThrough) continue;
+        if (index < this.consumedThrough || event.results[index].isFinal === false) continue;
         const text = event.results[index][0]?.transcript.trim();
         if (!text) { this.segments.delete(index); continue; }
         const normalized = normalize(text);
@@ -145,8 +145,11 @@ export class VoiceConversation {
           this.echoUntil = 0;
           this.options.cancelSpeech();
         }
+        // Android returns cumulative final transcripts. The latest final
+        // replaces this recognition's earlier result rather than joining it.
+        this.segments.clear();
         this.segments.set(index, text);
-        if (event.results[index].isFinal !== false) this.speechActive = false;
+        this.speechActive = false;
         received = true;
       }
       if (!received) return;
@@ -168,7 +171,7 @@ export class VoiceConversation {
       this.speechActive = false;
       this.recognition = null;
       this.schedule();
-      // Some browsers end recognition even in continuous mode. Keep the same
+      // Restart single-utterance recognition automatically. Keep the same
       // draft and pause clock while opening the next listening segment.
       this.restartTimer = setTimeout(() => this.listen(), 200);
     };

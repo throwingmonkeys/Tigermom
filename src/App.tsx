@@ -6,53 +6,47 @@ import {
   type FormEvent,
 } from "react";
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useAuthActions, useAuthToken } from "@convex-dev/auth/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import {
   ArrowRight,
-  AudioLines,
   BookOpen,
   Check,
   ChevronRight,
-  FileText,
   Heart,
   LoaderCircle,
   Menu,
   MessageCircle,
   Mic,
-  Paperclip,
   Send,
   Sparkles,
   Square,
+  Shield,
+  ThumbsUp,
+  ThumbsDown,
   Volume2,
   X,
 } from "lucide-react";
+import { referenceSources } from "../shared/sources";
 import { api } from "../convex/_generated/api";
 import { recognitionConstructor, readAloud } from "./speech";
 import { VoiceConversation } from "./voice";
 import type { Id } from "../convex/_generated/dataModel";
+import { mentionsUrgentSign, urgentMessage } from "../convex/urgent";
 
 type Source = { title: string; url: string };
-type Message = { role: "user" | "assistant"; text: string; sources?: Source[] };
-type Report = { id: Id<"reports">; name: string };
+type Message = { role: "user" | "assistant"; text: string; sources?: Source[]; vote?: "like" | "dislike" };
 const SESSION_LENGTH = 10 * 60_000;
-const referenceSources = [
-  { title: "FOGSI", description: "Indian obstetric and gynaecological guidance", url: "https://www.fogsi.org/" },
-  { title: "ACOG", description: "Pregnancy guidance from obstetric specialists", url: "https://www.acog.org/womens-health" },
-  { title: "Lamaze", description: "Evidence-based childbirth education", url: "https://www.lamaze.org/" },
-  { title: "Ina May Gaskin", description: "Clearly attributed childbirth perspectives", url: "https://inamay.com/" },
-];
 const starters = [
   "How long does childbirth take?",
   "Why is skin to skin with the newborn baby important?",
-  "Can you help me understand my report?",
 ];
-const curationMessage = "Tigermom curates its responses from the following resources. This list while not exhaustive, is a robust source of evidence when it comes to pregnancy and childbirth related questions.";
+const curationMessage = "These are Tigermom's approved sources. They have different roles: medical guidance, research, childbirth education, population data and context. Answers cite the specific pages used.";
 const feedbackReasons = [
   "I feel clearer",
   "I feel more confident",
   "I still have questions",
   "Something felt wrong",
-];
+] as const;
 
 function Brand({ small = false }: { small?: boolean }) {
   return (
@@ -60,9 +54,13 @@ function Brand({ small = false }: { small?: boolean }) {
       <span className="brand-mark">
         <Heart size={small ? 17 : 21} strokeWidth={1.7} />
       </span>
-      <span>
-        tigermom<span className="brand-dot">.</span>
-      </span>
+      {small ? (
+        <span>tigermom<span className="brand-dot">.</span></span>
+      ) : (
+        <span className="sidebar-wordmark" role="img" aria-label="TigerMom">
+          <img src="/tigermom-logo.png" alt="" aria-hidden="true" />
+        </span>
+      )}
     </span>
   );
 }
@@ -87,16 +85,20 @@ export default function App() {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn, signOut } = useAuthActions();
   const ask = useAction(api.conversation.reply);
+  const submitFeedback = useAction(api.feedback.submit);
   const begin = useMutation(api.sessions.begin);
   const heartbeat = useMutation(api.sessions.heartbeat);
   const finish = useMutation(api.sessions.finish);
-  const authToken = useAuthToken();
-  const removeReport = useMutation(api.reports.remove);
+  const submitSurvey = useMutation(api.survey.submit);
+  const surveyToken = useRef<string | null>(null);
+  const surveySaving = useRef(false);
   const [panel, setPanel] = useState<
-    "home" | "chat" | "feedback" | "thanks"
+    "home" | "chat" | "feedback"
   >("home");
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [ratingPending, setRatingPending] = useState<number | null>(null);
+  const [queuedRating, setQueuedRating] = useState<{ index: number; vote: "like" | "dislike" } | null>(null);
   const [sessionId, setSessionId] = useState<Id<"sessions"> | null>(null);
   const [sessionEndsAt, setSessionEndsAt] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(600);
@@ -107,22 +109,20 @@ export default function App() {
   const lifecycle = useRef(0);
   const spokenRepliesRef = useRef(spokenReplies);
   spokenRepliesRef.current = spokenReplies;
-  const [reports, setReports] = useState<Report[]>([]);
   const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [menu, setMenu] = useState(false);
   const [expired, setExpired] = useState(false);
+  const pendingQuestion = useRef<string | null>(null);
+  const pendingVoice = useRef(false);
   const [pendingStart, setPendingStart] = useState(false);
   const opening = useRef(false);
-  const [info, setInfo] = useState<"sources" | null>(
+  const [info, setInfo] = useState<"sources" | "privacy" | null>(
     null,
   );
   const [useful, setUseful] = useState<boolean | null>(null);
   const [reason, setReason] = useState("");
   const [listening, setListening] = useState(false);
-  const [voiceConsent, setVoiceConsent] = useState(false);
-  const [voiceDialog, setVoiceDialog] = useState(false);
   const voice = useRef<VoiceConversation | null>(null);
   const voiceHandlers = useRef<{
     getDraft: () => string;
@@ -135,19 +135,64 @@ export default function App() {
   });
   voiceHandlers.current = {
     getDraft: () => draft,
-    canSend: () => !busy && !uploading && Boolean(sessionId) && !closed.current && !expired && Boolean(availability?.ai),
+    canSend: () => !busy && Boolean(sessionId) && !closed.current && !expired && Boolean(availability?.ai),
     onQuestion: submitQuestion,
   };
-  const fileInput = useRef<HTMLInputElement>(null);
-  const pendingReport = useRef<File | null>(null);
   useEffect(() => {
-    if (!sessionId || !pendingReport.current) return;
-    const file = pendingReport.current;
-    pendingReport.current = null;
-    void upload(file);
+    if (!sessionId) return;
+    const question = pendingQuestion.current;
+    pendingQuestion.current = null;
+    if (question) void submitQuestion(question);
+    if (pendingVoice.current) {
+      pendingVoice.current = false;
+      microphone();
+    }
   }, [sessionId]);
   const bottom = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<Id<"sessions"> | null>(null);
+  async function saveRating(index: number, vote: "like" | "dislike", id: Id<"sessions">) {
+    const previous = messages[index]?.vote;
+    const generation = lifecycle.current;
+    setRatingPending(index);
+    setMessages(prev => prev.map((message, i) => i === index ? { ...message, vote } : message));
+    try {
+      const question = messages.slice(0, index).reverse().find(message => message.role === "user")?.text ?? "";
+      await submitFeedback({ sessionId: id, responseKey: `response-${index}`, vote, question, answer: messages[index].text });
+    } catch {
+      if (generation === lifecycle.current) {
+        setMessages(prev => prev.map((message, i) => i === index ? { ...message, vote: previous } : message));
+        setError("Your feedback wasn’t saved. Please try again.");
+      }
+    } finally { setRatingPending(null); }
+  }
+  async function rateResponse(index: number, vote: "like" | "dislike") {
+    if (ratingPending !== null || messages[index]?.vote === vote) return;
+    if (sessionRef.current) return saveRating(index, vote, sessionRef.current);
+    // Urgent replies work without a session. Only a feedback tap starts a guest
+    // identity, and the existing question and urgent guidance stay visible.
+    setRatingPending(index);
+    setQueuedRating({ index, vote });
+    if (!isAuthenticated) {
+      try { await signIn("anonymous"); }
+      catch { setQueuedRating(null); setRatingPending(null); setError("Your feedback wasn’t saved. Please try again."); }
+    }
+  }
+  useEffect(() => {
+    if (!queuedRating || !isAuthenticated) return;
+    const queued = queuedRating;
+    setQueuedRating(null);
+    const generation = lifecycle.current;
+    void (async () => {
+      try {
+        const id = sessionRef.current ?? await begin({});
+        if (generation !== lifecycle.current) { await finish({ sessionId: id }); return; }
+        sessionRef.current = id;
+        setSessionId(id);
+        setSessionEndsAt(Date.now() + SESSION_LENGTH);
+        await saveRating(queued.index, queued.vote, id);
+      } catch { setRatingPending(null); setError("Your feedback wasn’t saved. Please try again."); }
+    })();
+  }, [queuedRating, isAuthenticated]);
   const active = panel === "chat";
   useEffect(() => {
     sessionRef.current = sessionId;
@@ -156,7 +201,7 @@ export default function App() {
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, busy]);
   useEffect(() => {
-    // Do not store reports or conversation in browser storage. Explicit end deletes
+    // Do not store conversation in browser storage. Explicit end deletes
     // server data; an expiring server lease covers closed tabs and network loss.
     const close = () => {
       lifecycle.current++;
@@ -170,13 +215,15 @@ export default function App() {
       setSessionId(null);
       setSessionEndsAt(null);
       setMessages([]);
-      setReports([]);
+      setQueuedRating(null);
+      setRatingPending(null);
       setDraft("");
-      pendingReport.current = null;
+      pendingQuestion.current = null;
+      pendingVoice.current = false;
       setPanel("home");
       setInfo(null);
-      setVoiceConsent(false);
-      setVoiceDialog(false);
+
+
       setListening(false);
       setPendingStart(false);
       setBusy(false);
@@ -209,7 +256,7 @@ export default function App() {
       document.removeEventListener("visibilitychange", ping);
     };
   }, [sessionId, heartbeat]);
-  useEffect(() => { voice.current?.ready(); }, [busy, uploading, availability?.ai]);
+  useEffect(() => { voice.current?.ready(); }, [busy, availability?.ai]);
 
   function showError(e: unknown, fallback: string) {
     const text = e instanceof Error ? e.message : "";
@@ -245,7 +292,8 @@ export default function App() {
       setUseful(null);
       setReason("");
       setMessages([]);
-      setReports([]);
+      setQueuedRating(null);
+      setRatingPending(null);
       setPanel("chat");
     } catch (e) {
       if (generation !== lifecycle.current) return;
@@ -263,6 +311,10 @@ export default function App() {
     void openConversation();
   }, [pendingStart, isAuthenticated, openConversation]);
   async function start(prompt?: string) {
+    if (prompt && mentionsUrgentSign(prompt)) {
+      await submitQuestion(prompt);
+      return;
+    }
     setError("");
     setExpired(false);
     if (prompt) setDraft(prompt);
@@ -285,7 +337,26 @@ export default function App() {
     await submitQuestion(draft);
   }
   async function submitQuestion(question: string) {
-    if (!question.trim() || busy || uploading || !sessionId || closed.current || expired || !availability?.ai) return;
+    if (mentionsUrgentSign(question)) {
+      window.speechSynthesis?.cancel();
+      voice.current?.consumeDraft();
+      setPanel("chat");
+      setDraft("");
+      setError("");
+      const generation = lifecycle.current;
+      try {
+        const result = await ask({ ...(sessionId ? { sessionId } : {}), text: question, history: [] });
+        if (generation !== lifecycle.current) return;
+        setMessages(prev => [...prev, { role: "user", text: question }, { role: "assistant", text: result.text, sources: result.sources }]);
+      } catch { setError("Busy right now. Try again in a few minutes."); }
+      return;
+    }
+    if (question.trim() && !sessionId && !busy) {
+      pendingQuestion.current = question.trim();
+      await start();
+      return;
+    }
+    if (!question.trim() || busy || !sessionId || closed.current || expired || !availability?.ai) return;
     const text = question.trim();
     const voiceAtSend = voice.current;
     const voiceRevision = voiceAtSend?.revision;
@@ -309,6 +380,7 @@ export default function App() {
         ...prev,
         { role: "assistant", text: result.text, sources: result.sources },
       ]);
+      if (result.text === urgentMessage) return;
       const interrupted = voice.current === voiceAtSend && voiceAtSend?.revision !== voiceRevision;
       if (spokenRepliesRef.current && !interrupted && !voice.current?.hasPendingSpeech) {
         try { speakReply(result.text); }
@@ -328,52 +400,12 @@ export default function App() {
     try { readAloud(text, finishSpeaking); }
     catch (error) { finishSpeaking?.(); throw error; }
   }
-  async function upload(file?: File) {
-    if (!file || !sessionId || ending.current || expired) return;
-    setError("");
-    if (
-      !["application/pdf", "image/jpeg"].includes(
-        file.type,
-      )
-    ) {
-      setError("Error uploading your report. Please upload jpeg or pdf only");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setError("That file is larger than 10 MB. Please use a smaller copy.");
-      return;
-    }
-    setUploading(true);
-    try {
-      const site = import.meta.env.VITE_CONVEX_URL.replace(
-        /\.convex\.cloud$/,
-        ".convex.site",
-      );
-      const response = await fetch(`${site}/reports/upload`, {
-        method: "POST",
-        headers: {
-          "Content-Type": file.type,
-          Authorization: `Bearer ${authToken}`,
-          "X-Session-Id": sessionId,
-          "X-Report-Name": encodeURIComponent(file.name),
-        },
-        body: file,
-      });
-      if (!response.ok) throw new Error("Upload failed");
-      const { id } = await response.json();
-      if (closed.current || sessionRef.current !== sessionId) return;
-      setReports((prev) => [...prev, { id, name: file.name }]);
-    } catch (e) {
-      if (closed.current || sessionRef.current !== sessionId) return;
-      showError(e, "Error uploading your report. Please upload jpeg or pdf only");
-    } finally {
-      setUploading(false);
-      if (fileInput.current) fileInput.current.value = "";
-    }
-  }
   async function endConversation(cause: "manual" | "timeout" | "expired" = "manual") {
     if (ending.current) return;
     ending.current = true;
+    lifecycle.current++;
+    pendingQuestion.current = null;
+    pendingVoice.current = false;
     closed.current = true;
     setBusy(true);
     setError("");
@@ -381,22 +413,28 @@ export default function App() {
     voice.current = null;
     window.speechSynthesis?.cancel();
     setListening(false);
-    setVoiceDialog(false);
-    setVoiceConsent(false);
+
+
     if (cause !== "manual") {
       setExpired(true);
       setTimeEnded(cause === "timeout");
-      setReports([]);
       setMessages([]);
+      setQueuedRating(null);
+      setRatingPending(null);
       setDraft("");
     }
     try {
-      if (sessionId) await finish({ sessionId });
+      if (sessionId) {
+        const token = surveyToken.current ?? Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, "0")).join("");
+        await finish({ sessionId, surveyToken: token });
+        surveyToken.current = token;
+      }
       sessionRef.current = null;
       setSessionId(null);
       setSessionEndsAt(null);
-      setReports([]);
       setMessages([]);
+      setQueuedRating(null);
+      setRatingPending(null);
       setDraft("");
       setPanel("feedback");
       setInfo(null);
@@ -434,16 +472,12 @@ export default function App() {
       document.removeEventListener("visibilitychange", tick);
     };
   }, [sessionEndsAt]);
-  function microphone(consented = false) {
+  function microphone() {
     if (ending.current || expired) return;
     setError("");
     if (listening) {
       voice.current?.stop();
       voice.current = null;
-      return;
-    }
-    if (!voiceConsent && !consented) {
-      setVoiceDialog(true);
       return;
     }
     const Constructor = recognitionConstructor();
@@ -465,6 +499,36 @@ export default function App() {
       cancelSpeech: () => window.speechSynthesis?.cancel(),
     });
     voice.current.start();
+  }
+  async function toggleMicrophone() {
+    if (!sessionId) {
+      pendingVoice.current = true;
+      await start();
+    } else await endConversation();
+  }
+  async function sendSurvey() {
+    if (useful === null || !reason || !surveyToken.current || surveySaving.current) return;
+    surveySaving.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      await submitSurvey({ token: surveyToken.current, useful, reason: reason as typeof feedbackReasons[number] });
+      returnHome();
+    } catch {
+      setError("Your rating did not save. Please tap Submit to try again, or skip feedback.");
+    } finally {
+      surveySaving.current = false;
+      setBusy(false);
+    }
+  }
+  function returnHome() {
+    surveyToken.current = null;
+    setError("");
+    setPanel("home");
+    setExpired(false);
+    setTimeEnded(false);
+    setUseful(null);
+    setReason("");
   }
   return (
     <div className={`app-shell panel-${panel}`}>
@@ -502,6 +566,9 @@ export default function App() {
           >
             <BookOpen size={19} /> Our sources
           </button>
+          <button className={`nav-item ${info === "privacy" ? "selected" : ""}`} onClick={() => { setInfo("privacy"); setMenu(false); }}>
+            <Shield size={19} /> Privacy notice
+          </button>
         </nav>
       </aside>
       {menu && (
@@ -529,16 +596,35 @@ export default function App() {
             <button className="text-button" onClick={() => setInfo(null)}>
               Back to your conversation <ArrowRight size={15} />
             </button>
+            {info === "privacy" && (
+              <>
+                <Shield className="page-icon" />
+                <h1>Privacy notice</h1>
+                <p className="intro">How Tigermom uses your questions and conversation.</p>
+                <h3>Preparing an answer</h3>
+                <p>Tigermom sends your question and relevant conversation to OpenAI to prepare an answer. Please leave out names, contact details and other identifying information where possible.</p>
+                <h3>Finding sources</h3>
+                <p>A private step uses your question and relevant conversation to prepare a general search question. It is instructed to remove identifying details and individual results while preserving what you want to understand. Only the prepared question goes to web search; the original conversation is kept out of the search step.</p>
+                <p>This preparation can make mistakes. Avoid including identifying details in your questions. If a private search question cannot be prepared, Tigermom asks you to ask the general question without private details.</p>
+                <h3>Your session and feedback</h3>
+                <p>Your conversation is cleared when your session ends or an inactive session expires. Survey answers and response ratings contribute to anonymous totals without your conversation.</p>
+                <h3>OpenAI and voice services</h3>
+                <p>OpenAI may retain information under its own data policy. Tigermom requests that responses are not stored by OpenAI, but this does not mean zero provider retention.</p>
+                <p><a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noreferrer">Read OpenAI's data policy</a></p>
+                <p>If you use voice, your browser's speech service receives what you say and may send audio off your device. Spoken replies use a local device voice when available.</p>
+              </>
+            )}
             {info === "sources" && (
               <>
                 <BookOpen className="page-icon" />
                 <h1>Sources</h1>
                 <p className="intro">{curationMessage}</p>
                 <div className="source-list">
-                  {referenceSources.map(({ title: name, url }) => (
+                  {referenceSources.map(({ title: name, url, description }) => (
                     <a key={name} href={url} target="_blank" rel="noreferrer">
                       <div>
                         <h3>{name}</h3>
+                          <p>{description}</p>
 
                       </div>
                       <ArrowRight size={19} />
@@ -554,9 +640,9 @@ export default function App() {
           >
             <section className="welcome-column">
               <div className="welcome-copy">
-                <img className="home-logo" src="/tigermom-logo.jpeg" alt="TigerMom. Be prepared. Be informed. Be in your child's corner." />
+                <img className="home-logo" src="/tigermom-logo.png" alt="TigerMom. Be prepared. Be informed. Be in your child's corner." />
                 <h1>Making the right choices for your baby begins by getting evidence backed answers to all your questions</h1>
-                <p className="intro">Ask Tigermom a question. No sign-up needed. Upload a report for context.</p>
+                <p className="intro">Ask Tigermom a question. No sign-up needed.</p>
               </div>
             </section>
             <section
@@ -574,89 +660,45 @@ export default function App() {
                   <Sparkles size={20} />
                 </span>
               </div>
-              {panel === "home" && (
-                <div className="start-content">
-                  <div className="conversation-actions">
-                  <button
-                    className="primary-button start-button"
-                    disabled={busy || isLoading}
-                    onClick={() => void start(draft)}
-                  >
-                    <AudioLines size={20} /> Talk to Tigermom{" "}
-                    <ArrowRight size={18} />
-                  </button>
-                    <button className="stop-button" disabled>Stop conversation</button>
-                  </div>
-                  <div className="home-question-row">
-                    <textarea aria-label="Your question" placeholder="What do you have in mind?" value={draft} onChange={e => setDraft(e.target.value)} maxLength={3000} rows={3} disabled={busy} />
-                    <label className={`home-upload ${busy ? "disabled" : ""}`}>
-                      <Paperclip size={19} /> Upload report
-                      <input type="file" accept="application/pdf,image/jpeg" disabled={busy} className="upload-file-control" aria-label="Upload report" onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (!["application/pdf", "image/jpeg"].includes(file.type)) {
-                          setError("Error uploading your report. Please upload jpeg or pdf only");
-                          return;
-                        }
-                        pendingReport.current = file;
-                        void start(draft);
-                      }} />
-                    </label>
-                  </div>
-                  <div className="starter-list">
-                    {starters.map((s, i) => (
-                      <button key={s} disabled={busy || isLoading} onClick={() => void start(s)}>
-                        <span>
-                          {i === 1 ? (
-                            <FileText size={18} />
-                          ) : i === 2 ? (
-                            <BookOpen size={18} />
-                          ) : (
-                            <MessageCircle size={18} />
-                          )}
-                        </span>
-                        {s}
-                        <ChevronRight size={17} />
-                      </button>
-                    ))}
-                  </div>
-                  {availability?.ai === false && <p className="service-note" role="status">Live AI replies are paused.</p>}
-                </div>
-              )}
-              {active && (
+              {(panel === "home" || active) && (
                 <>
-                  <div className="chat-messages" aria-live="polite">
-                    {messages.length ===
-                      0 && (
-                      <div className="chat-welcome"><p>What do you have in mind?</p></div>
-                    )}
+                  <div className={"chat-messages " + (messages.length ? "has-messages" : "empty")} aria-live="polite">
                     {messages.map((m, i) => (
-                      <article className={`message ${m.role}`} key={i}>
+                      <article className={"message " + m.role + (m.text === urgentMessage ? " urgent-message" : "")} key={i}>
                         <span className="message-person">
                           {m.role === "user" ? "You" : "Tigermom"}
                         </span>
                         <div className="message-body">
                           <Paragraphs text={m.text} />
                         </div>
+                        {m.role === "assistant" && (
+                          <div className="response-feedback" role="group" aria-label="Rate this response">
+                            <button type="button" aria-label="Like this response" aria-pressed={m.vote === "like"}
+                              disabled={ratingPending !== null} onClick={() => void rateResponse(i, "like")}><ThumbsUp size={21} /> Like</button>
+                            <button type="button" aria-label="Dislike this response" aria-pressed={m.vote === "dislike"}
+                              disabled={ratingPending !== null} onClick={() => void rateResponse(i, "dislike")}><ThumbsDown size={21} /> Dislike</button>
+                            <span role="status">{ratingPending === i ? "Saving feedback…" : m.vote ? "Thanks for your feedback" : ""}</span>
+                          </div>
+                        )}
                         {m.sources && m.sources.length > 0 && (
                           <div className="answer-sources">
                             <span>
                               <BookOpen size={12} /> Sources
                             </span>
-                            {m.sources.map((s) => (
+                            {m.sources.map((s, sourceIndex) => (
                               <a
                                 key={s.url}
                                 href={s.url}
                                 target="_blank"
                                 rel="noreferrer"
                               >
-                                {s.title}
+                                [{sourceIndex + 1}] {s.title}
                                 <ArrowRight size={12} />
                               </a>
                             ))}
                           </div>
                         )}
-                        {m.role === "assistant" && (
+                        {m.role === "assistant" && m.text !== urgentMessage && (
                           <button
                             className="read-button"
                             onClick={() => {
@@ -686,7 +728,7 @@ export default function App() {
                   </div>
                     <div className="composer-area">
                       {availability?.ai === false && <p className="service-note" role="status">Live AI replies are paused. Your questions won’t be sent to AI.</p>}
-                      <div className="session-controls">
+                      {sessionId && <div className="session-controls">
                         <span className="session-timer" role="timer" aria-label="Time remaining">
                           {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")} left
                         </span>
@@ -696,54 +738,23 @@ export default function App() {
                             if (!e.target.checked) window.speechSynthesis?.cancel();
                           }} /> Spoken replies
                         </label>
-                      </div>
-                      {reports.map((r) => (
-                        <div className="report-chip" key={r.id}>
-                          <FileText size={14} />
-                          <span>{r.name}</span>
+                      </div>}
                           <button
-                            aria-label={`Remove ${r.name}`}
-                            disabled={busy}
-                            onClick={async () => {
-                              try {
-                                await removeReport({ reportId: r.id });
-                                setReports((prev) =>
-                                  prev.filter((x) => x.id !== r.id),
-                                );
-                              } catch {
-                                setError(
-                                  "Could not remove your report. Please try again.",
-                                );
-                              }
-                            }}
+                            type="button"
+                            className="primary-button start-button talk-button"
+                            aria-label={
+                              sessionId ? "Stop conversation" : "Talk to Tigermom"
+                            }
+                            disabled={opening.current || pendingStart || ending.current || (Boolean(sessionId) && expired)}
+                            onClick={() => void toggleMicrophone()}
                           >
-                            <X size={14} />
+                            <span>{sessionId ? "Stop conversation" : "Talk to Tigermom"}</span>
+                            {sessionId ? (
+                              <Square size={18} />
+                            ) : (
+                              <Mic size={19} />
+                            )}
                           </button>
-                        </div>
-                      ))}
-                      {voiceDialog && !listening && (
-                        <div className="voice-consent">
-                          <p>
-                            Your browser may send audio to its speech service. Voice stays on until you stop it.
-                          </p>
-                          <button
-                            onClick={() => {
-                              setVoiceConsent(true);
-                              setVoiceDialog(false);
-                              microphone(true);
-                            }}
-                          >
-                            Use voice input
-                          </button>
-                          <button onClick={() => setVoiceDialog(false)}>
-                            Keep typing
-                          </button>
-                        </div>
-                      )}
-                      <div className="conversation-actions">
-                        <button className="primary-button" onClick={() => microphone()} disabled={expired || listening}><Mic size={18} /> Talk to Tigermom</button>
-                        <button className="stop-button" disabled={uploading || ending.current} onClick={() => void endConversation()}>Stop conversation</button>
-                      </div>
                       <form className="composer" onSubmit={send}>
                         <textarea
                           aria-label="Your question"
@@ -758,55 +769,22 @@ export default function App() {
                             }
                           }}
                           rows={2}
-                          disabled={busy || expired}
+                          disabled={busy}
                         />
                         <div className="composer-controls">
-                          <input
-                            ref={fileInput}
-                            type="file"
-                            accept="application/pdf,image/jpeg"
-                            hidden
-                            onChange={(e) => void upload(e.target.files?.[0])}
-                          />
-                          <button
-                            type="button"
-                            className="icon-button"
-                            aria-label="Upload report"
-                            disabled={uploading || busy || expired || reports.length >= 3}
-                            onClick={() => fileInput.current?.click()}
-                          >
-                            {uploading ? (
-                              <LoaderCircle size={19} className="spin" />
-                            ) : (
-                              <Paperclip size={19} />
-                            )}
-                            <span>Upload report</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={`icon-button mic-button ${listening ? "listening" : ""}`}
-                            aria-label={
-                              listening ? "Stop listening" : "Use microphone"
-                            }
-                            disabled={expired}
-                            onClick={() => microphone()}
-                          >
-                            {listening ? (
-                              <Square size={18} />
-                            ) : (
-                              <Mic size={19} />
-                            )}
-                          </button>
                           <button
                             className="send-button"
                             aria-label="Send question"
-                            disabled={!draft.trim() || busy || uploading || expired || !availability?.ai}
+                            disabled={!draft.trim() || (!mentionsUrgentSign(draft) && (busy || (Boolean(sessionId) && expired) || !availability?.ai))}
                           >
                             <Send size={17} />
                           </button>
                         </div>
                       </form>
-                      {listening && <p className="service-note" role="status">Voice is on. Take your time; pause for 4 seconds when you’re done. Speak to interrupt, or tap the mic to stop.</p>}
+                      {panel === "home" && <div className="starter-list">
+                        {starters.map(s => <button key={s} disabled={busy || isLoading} onClick={() => void submitQuestion(s)}>{s}<ChevronRight size={17} /></button>)}
+                      </div>}
+                      {listening && <p className="service-note" role="status">Voice is on. Take your time; pause for 4 seconds when you’re done. Speak to interrupt, or tap Stop conversation to finish the session.</p>}
                     </div>
                 </>
               )}
@@ -843,48 +821,24 @@ export default function App() {
                       >
                         <option value="">Choose one</option>
                         {feedbackReasons.map((r) => (
-                          <option key={r}>{r}</option>
+                          <option key={r} value={r}>{r === "Something felt wrong" ? "That didn't help at all" : r}</option>
                         ))}
                       </select>
                       <button
                         className="primary-button"
-                        disabled={!reason}
-                        onClick={() => setPanel("thanks")}
+                        disabled={!reason || busy || pendingStart}
+                        onClick={() => void sendSurvey()}
                       >
-                        Continue to sources <ArrowRight size={17} />
+                        {busy ? "Submitting..." : "Submit"} <ArrowRight size={17} />
                       </button>
                     </>
                   )}
                   <button
                     className="text-button"
-                    onClick={() => setPanel("thanks")}
+                    disabled={busy}
+                    onClick={returnHome}
                   >
                     Skip feedback
-                  </button>
-                </div>
-              )}
-              {panel === "thanks" && (
-                <div className="feedback-content">
-                  <Heart size={32} className="thank-heart" />
-                  <h2>Sources</h2>
-                  <p>{curationMessage}</p>
-                  <div className="source-list">
-                    {referenceSources.map((source) => (
-                      <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
-                        <div><h3>{source.title}</h3></div>
-                        <ArrowRight size={19} />
-                      </a>
-                    ))}
-                  </div>
-                  <button
-                    className="primary-button"
-                    onClick={() => {
-                      setPanel("home");
-                      setUseful(null);
-                      setReason("");
-                    }}
-                  >
-                    Back to home <ArrowRight size={17} />
                   </button>
                 </div>
               )}

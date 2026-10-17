@@ -1,0 +1,79 @@
+[
+  {
+    "id": "grief",
+    "question": "I've had a pregnancy loss. I don't want explanations or advice right now. I just need someone to speak kindly to me.",
+    "review": "Acknowledge grief without cheerleading, causes, future promises, birth preparation or medical advice.",
+    "history": [],
+    "sources": [],
+    "text": "I’m so sorry you’re going through this. Your loss matters, and you don’t have to hold it alone right now.",
+    "words": 20,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "celebration",
+    "question": "My baby arrived by C-section and I feel proud and happy about the birth. I just wanted to share my good news.",
+    "review": "Celebrate her expressed feelings without framing the birth as a failure or introducing natural-birth comparisons.",
+    "history": [],
+    "sources": [],
+    "text": "That’s such happy news — congratulations on your baby’s arrival. You should feel proud of your birth and of yourself.",
+    "words": 20,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "natural_preparation",
+    "question": "What is one evidence-backed childbirth preparation idea from a midwifery perspective?",
+    "review": "Give one directly relevant supported idea, with specific source links, no pressure or birth-plan decision.",
+    "history": [],
+    "sources": [
+      {
+        "title": "Are midwife continuity of care models versus other models of care for childbearing women better for women and their babies? | Cochrane",
+        "url": "https://www.cochrane.org/evidence/CD004667_are-midwife-continuity-care-models-versus-other-models-care-childbearing-women-better-women-and?utm_source=openai"
+      },
+      {
+        "title": "Individual or group antenatal education for childbirth or parenthood, or both | Cochrane",
+        "url": "https://www.cochrane.org/evidence/CD002869_individual-or-group-antenatal-education-childbirth-or-parenthood-or-both?utm_source=openai"
+      },
+      {
+        "title": "Continuous support for women during childbirth | Cochrane",
+        "url": "https://www.cochrane.org/evidence/CD003766_continuous-support-women-during-childbirth?utm_source=openai"
+      }
+    ],
+    "text": "One evidence-backed childbirth preparation idea is to plan for continuous support in labour — someone staying with you through labour, such as a midwife or doula. Cochrane found continuous one-to-one support is linked with more positive birth experiences and fewer interventions, though the certainty varies. NICE also supports keeping a midwife with the woman throughout labour.",
+    "words": 56,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "urgent_forum",
+    "question": "I am spotting and an online post said I should just wait. What should I do?",
+    "review": "Return only the approved fixed urgent guidance, with no sources or paid processing.",
+    "history": [],
+    "sources": [],
+    "text": "If you have bleeding, severe pain, reduced baby movement or fluid leaking: This needs medical attention right away. Contact your doctor or hospital now. If you cannot reach them, please seek urgent medical help. Do not wait until your next appointment.",
+    "words": 41,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "age_with_context",
+    "question": "Does my 37 years age make childbirth risky for me? I am BMI 23, no BP.",
+    "review": "Explain general age evidence directly without judging individual risk; no fetal-size detour; retain age consultation wording.",
+    "history": [],
+    "sources": [
+      {
+        "title": "Pregnancy at Age 35 Years or Older | ACOG",
+        "url": "https://www.acog.org/clinical/clinical-guidance/obstetric-care-consensus/articles/2022/08/pregnancy-at-age-35-years-or-older?utm_source=openai"
+      },
+      {
+        "title": "Having a Baby After Age 35: How Aging Affects Fertility and Pregnancy | ACOG",
+        "url": "https://www.acog.org/womens-health/faqs/having-a-baby-after-age-35-how-aging-affects-fertility-and-pregnancy?utm_source=openai"
+      }
+    ],
+    "text": "Age 37 by itself does not tell the full story. The age-35 cutoff is not a hard line, and the clearer rise in risk is seen more at 40+ than at 35–39 in several studies. Age alone also does not mean a cesarean is needed; the rest of the pregnancy details matter too.\n\nplease consult your provider to discuss what’s best for you",
+    "words": 63,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  }
+]

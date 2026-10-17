@@ -1,0 +1,17 @@
+{
+  "id": "criticism",
+  "question": "You do not know how long child birth takes? You had told me two days ago!",
+  "reply": {
+    "sources": [
+      {
+        "title": "Recommendations | Intrapartum care | Guidance | NICE",
+        "url": "https://www.nice.org.uk/guidance/ng235/chapter/Recommendations"
+      },
+      {
+        "title": "Pushing methods for the second stage of labour | Cochrane",
+        "url": "https://www.cochrane.org/evidence/CD009124_pushing-methods-second-stage-labour"
+      }
+    ],
+    "text": "I should have said it more clearly. For a second birth, the established first stage is about 5 hours on average and is unlikely to last over 12 hours [1]. The second stage, from full dilation to birth, is more variable; Cochrane says pushing time can range from minutes to over an hour, and the evidence is too limited to give one precise usual length [2]."
+  }
+}

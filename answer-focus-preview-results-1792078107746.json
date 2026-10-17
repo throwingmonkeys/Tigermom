@@ -1,0 +1,62 @@
+[
+  {
+    "label": "a",
+    "question": "is there a weight at which delivery becomes risky?",
+    "sources": [
+      {
+        "title": "NICE Guideline Template",
+        "url": "https://www.nice.org.uk/guidance/ng3/evidence/full-guideline-pdf-3784285"
+      },
+      {
+        "title": "Influence of maternal body mass index on pregnancy complications and outcomes: a systematic review and meta-analysis - PMC",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11183281/?utm_source=openai"
+      }
+    ],
+    "text": "Your doctor makes the medical call. There is **not a sharp weight cutoff** where delivery suddenly becomes risky; the estimate itself is imprecise, and NICE says estimated fetal weight can be off by about **8–15%**, with less accuracy in diabetes and larger babies. [1] Higher **maternal** BMI (pre-pregnancy BMI 30 kg/m² or more) is linked with more delivery complications in studies, but the evidence does **not** give one exact safe or unsafe threshold. [2]"
+  },
+  {
+    "label": "b",
+    "question": "that's dumb",
+    "sources": [
+      {
+        "title": "Induction of labour at or near the end of pregnancy for babies suspected of being very large (macrosomia) | Cochrane",
+        "url": "https://www.cochrane.org/evidence/CD000938_induction-labour-or-near-end-pregnancy-babies-suspected-being-very-large-macrosomia"
+      },
+      {
+        "title": "Influence of maternal body mass index on pregnancy complications and outcomes: a systematic review and meta-analysis - PMC",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11183281/?utm_source=openai"
+      }
+    ],
+    "text": "Sorry — that was too blunt. Your doctor makes the medical call. There isn’t a single weight where delivery suddenly becomes risky; for **suspected large baby weight**, the estimate before birth is often inaccurate, and many babies thought to be large are not confirmed at delivery [1]. Higher **maternal BMI** is linked with more delivery complications, but it still does not give one exact threshold [2]."
+  },
+  {
+    "label": "offer setup (neither a nor b offered simplification)",
+    "question": "Please offer to explain your answer about weight in simpler words using the sources you already have. Do not simplify it yet.",
+    "sources": [
+      {
+        "title": "Macrosomia | ACOG",
+        "url": "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/01/macrosomia?utm_source=openai"
+      },
+      {
+        "title": "Recommendations | Intrapartum care for women with existing medical conditions or obstetric complications and their babies | Guidance | NICE",
+        "url": "https://www.nice.org.uk/guidance/ng121/chapter/Recommendations"
+      }
+    ],
+    "text": "Your doctor makes the medical call. There is no single weight where delivery suddenly becomes risky; the “large baby” weight cutoffs in guidance are definitions, not a safe-versus-unsafe boundary [1]. The weight estimate before birth is also uncertain, so it can overcall risk [2]. If you want, I can explain this in simpler words."
+  },
+  {
+    "label": "c",
+    "question": "yes",
+    "sources": [
+      {
+        "title": "Macrosomia | ACOG",
+        "url": "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/01/macrosomia?utm_source=openai"
+      },
+      {
+        "title": "Recommendations | Inducing labour | Guidance | NICE",
+        "url": "https://www.nice.org.uk/guidance/ng207/chapter/Recommendations"
+      }
+    ],
+    "text": "Your doctor makes the medical call. In simpler words: there isn’t one exact baby-weight number where birth suddenly becomes risky [1]. The estimated baby weight before birth can be off by about 8–15%, and it is less accurate in diabetes and bigger babies [2]. So the number is only an estimate, not a clear safety line [1][2]."
+  }
+]

@@ -17,23 +17,7 @@ async function fixture() {
   const owner = t.withIdentity({ subject: `${userId}|session` });
   const other = t.withIdentity({ subject: `${otherId}|session` });
   const sessionId = await owner.mutation(api.sessions.begin, {});
-  const storageId = await t.run((ctx) =>
-    ctx.storage.store(
-      new Blob(["%PDF-1.4 written report"], { type: "application/pdf" }),
-    ),
-  );
-  // convex-test omits Blob contentType in _storage metadata. Seed a stored
-  // report to test access and deletion without weakening production validation.
-  const reportId = await t.run((ctx) =>
-    ctx.db.insert("reports", {
-      sessionId,
-      storageId,
-      userId,
-      mimeType: "application/pdf",
-      name: "report.pdf",
-    }),
-  );
-  return { t, owner, other, userId, sessionId, reportId, storageId };
+  return { t, owner, other, userId, sessionId };
 }
 describe("Private free sessions", () => {
   it("ends at ten minutes even when the page keeps checking in", async () => {
@@ -52,70 +36,31 @@ describe("Private free sessions", () => {
       sessionId: f.sessionId,
     })).rejects.toThrow("session has ended");
     await f.t.mutation(internal.sessions.expire, { sessionId: f.sessionId });
-    expect(await f.t.run((ctx) => ctx.storage.get(f.storageId))).toBeNull();
     expect(await f.t.run((ctx) => ctx.db.get(f.sessionId))).toBeNull();
     await f.t.finishAllScheduledFunctions(() => vi.runAllTimers());
   });
-  it("deletes reports and their storage when the woman ends her session", async () => {
+  it("clears a session when its owner ends it", async () => {
     const f = await fixture();
     await f.owner.mutation(api.sessions.finish, { sessionId: f.sessionId });
-    expect(await f.t.run((ctx) => ctx.db.get(f.reportId))).toBeNull();
-    expect(await f.t.run((ctx) => ctx.storage.get(f.storageId))).toBeNull();
-    expect(await f.t.run((ctx) => ctx.db.get(f.sessionId))).toBeNull();
-    await expect(
-      f.owner.mutation(api.sessions.finish, { sessionId: f.sessionId }),
-    ).resolves.toBeNull();
+    expect(await f.t.run(ctx => ctx.db.get(f.sessionId))).toBeNull();
+    await expect(f.owner.mutation(api.sessions.finish, { sessionId: f.sessionId })).resolves.toBeNull();
   });
-  it("blocks another woman from accessing or deleting a report or session", async () => {
+  it("blocks another visitor from accessing or ending a session", async () => {
     const f = await fixture();
-    await expect(
-      f.other.query(internal.sessions.files, { sessionId: f.sessionId }),
-    ).rejects.toThrow();
-    await expect(
-      f.other.mutation(api.reports.remove, { reportId: f.reportId }),
-    ).rejects.toThrow();
-    await expect(
-      f.other.mutation(api.sessions.finish, { sessionId: f.sessionId }),
-    ).rejects.toThrow();
-    expect(
-      await f.t.run(
-        async (ctx) => (await ctx.storage.get(f.storageId)) !== null,
-      ),
-    ).toBe(true);
+    await expect(f.other.query(internal.sessions.assertActive, { sessionId: f.sessionId })).rejects.toThrow();
+    await expect(f.other.mutation(api.sessions.finish, { sessionId: f.sessionId })).rejects.toThrow();
+    expect(await f.t.run(ctx => ctx.db.get(f.sessionId))).not.toBeNull();
   });
-  it("deletes expired uploads after an unexpectedly closed session", async () => {
-    vi.useFakeTimers();
-    const f = await fixture();
-    await f.t.run((ctx) =>
-      ctx.db.patch(f.sessionId, { expiresAt: Date.now() - 1 }),
-    );
+  it("clears an expired session", async () => {
+    vi.useFakeTimers(); const f = await fixture();
+    await f.t.run(ctx => ctx.db.patch(f.sessionId, { expiresAt: Date.now() - 1 }));
     await f.t.mutation(internal.sessions.expire, { sessionId: f.sessionId });
-    expect(await f.t.run((ctx) => ctx.storage.get(f.storageId))).toBeNull();
+    expect(await f.t.run(ctx => ctx.db.get(f.sessionId))).toBeNull();
     await f.t.finishAllScheduledFunctions(() => vi.runAllTimers());
   });
-  it("rejects unsigned uploads and unsupported or oversized reports", async () => {
+  it("rejects an unsigned session start", async () => {
     const f = await fixture();
     await expect(f.t.mutation(api.sessions.begin, {})).rejects.toThrow();
-    const invalid = await f.t.run((ctx) =>
-      ctx.storage.store(new Blob(["bad"], { type: "text/html" })),
-    );
-    await expect(
-      f.owner.mutation(internal.reports.register, {
-        sessionId: f.sessionId,
-        storageId: invalid,
-        name: "bad.html",
-        mimeType: "text/html",
-      }),
-    ).rejects.toThrow();
-    const response = await f.t.fetch("/reports/upload", {
-      method: "POST",
-      headers: {
-        Origin: "http://127.0.0.1:5173",
-        "Content-Type": "application/pdf",
-      },
-      body: "%PDF-1.4",
-    });
-    expect(response.status).toBe(401);
   });
 });
 describe("Evidence links", () => {

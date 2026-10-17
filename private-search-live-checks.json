@@ -1,0 +1,98 @@
+{
+  "contextChecksBeforeFinalAttributionFix": [
+    {
+      "id": "duration",
+      "question": "How long does childbirth take?",
+      "prepared": {
+        "status": "not_inspected_live",
+        "note": "CLI could not invoke the internal action; integration tests inspect the outgoing research request."
+      },
+      "reply": {
+        "sources": [
+          {
+            "title": "folder.indd",
+            "url": "https://www.who.int/docs/default-source/reproductive-health/maternal-health/ipc.pdf?sfvrsn%253Ddc30fc00_8="
+          },
+          {
+            "title": "Recommendations | Intrapartum care | Guidance | NICE",
+            "url": "https://www.nice.org.uk/guidance/ng235/chapter/Recommendations"
+          },
+          {
+            "title": "Duration of spontaneous labour in \u2018low-risk\u2019 women with \u2018normal\u2019 perinatal outcomes: A systematic review - PMC",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5884320/?utm_source=openai"
+          }
+        ],
+        "text": "Birth time varies by stage. WHO says the active first stage usually does not go beyond 12 hours in a first labour or 10 hours in later labours; the second stage is usually within 3 hours for a first birth and 2 hours for later births [1]. NICE says the whole established first stage is about 8 hours for a first labour and 5 hours for later labours [2]. Early labour can vary a lot [3]."
+      }
+    },
+    {
+      "id": "followup",
+      "question": "And the second time?",
+      "prepared": {
+        "status": "not_inspected_live",
+        "note": "CLI could not invoke the internal action; integration tests inspect the outgoing research request."
+      },
+      "reply": {
+        "sources": [
+          {
+            "title": "WHO recommendations",
+            "url": "https://iris.who.int/bitstream/10665/260178/1/9789241550215-eng.pdf?utm_source=openai"
+          },
+          {
+            "title": "Recommendations | Intrapartum care | Guidance | NICE",
+            "url": "https://www.nice.org.uk/guidance/ng235/chapter/Recommendations"
+          },
+          {
+            "title": "CG190 Intrapartum care for healthy women and babies: Full guideline 29/09/2023",
+            "url": "https://www.nice.org.uk/guidance/ng235/evidence/full-guideline-december-2014-pdf-13186815517"
+          }
+        ],
+        "text": "The second time is usually shorter. For the active first stage, NICE says the median is about 4 hours in a first labour and 3 hours in a second or later labour [2]. For the active second stage, birth is usually within 3 hours for a first baby and 2 hours for a second or later baby [2]. WHO says the second stage still varies a lot between women [1]."
+      }
+    }
+  ],
+  "feedbackChecksAfterFinalAttributionFix": [
+    {
+      "id": "criticism",
+      "question": "You don't know how long child birth takes? You had told me two days ago!",
+      "prepared": {
+        "status": "not_inspected_live",
+        "note": "CLI could not invoke the internal action; integration tests inspect the outgoing research request."
+      },
+      "reply": {
+        "sources": [
+          {
+            "title": "Recommendations | Intrapartum care | Guidance | NICE",
+            "url": "https://www.nice.org.uk/guidance/ng235/chapter/Recommendations"
+          }
+        ],
+        "text": "You\u2019re right \u2014 I should have said it more clearly.\n\nFor a second birth, labour is usually shorter. NICE says the established first stage starts with regular contractions and cervical dilation from 4 cm, and people who have given birth before can spend less time in labour than first-time mothers [1]. For the second stage, NICE says most women with a previous birth give birth within 2 hours from the start of active second stage; there may also be up to 1 hour of passive stage before active pushing starts [1]."
+      }
+    },
+    {
+      "id": "feedback-repair",
+      "question": "Why could you not just answer how long labour takes? You said it yesterday.",
+      "prepared": {
+        "status": "not_inspected_live",
+        "note": "CLI could not invoke the internal action; integration tests inspect the outgoing research request."
+      },
+      "reply": {
+        "sources": [
+          {
+            "title": "Recommendations | Intrapartum care | Guidance | NICE",
+            "url": "https://www.nice.org.uk/guidance/ng235/chapter/Recommendations"
+          },
+          {
+            "title": "How to Tell When Labor Begins | ACOG",
+            "url": "https://www.acog.org/womens-health/faqs/how-to-tell-when-labor-begins?utm_source=openai"
+          },
+          {
+            "title": "CG190 Intrapartum care for healthy women and babies: Full guideline 29/09/2023",
+            "url": "https://www.nice.org.uk/guidance/ng235/evidence/full-guideline-december-2014-pdf-13186815517"
+          }
+        ],
+        "text": "You\u2019re right \u2014 I should have said it more plainly.\n\nFor a second birth, a simple overall estimate is about **8\u201310 hours** [2]. NICE says the **active second stage** is the pushing part, and most women with a second or later birth give birth within **2 hours** of that stage starting, though there may be up to **1 hour** of passive stage before pushing [1]."
+      }
+    }
+  ]
+}

@@ -16,11 +16,22 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_expiresAt", ["expiresAt"]),
+  // Legacy rows exist only for authorised deletion; v1 has no upload writers.
   reports: defineTable({
     sessionId: v.id("sessions"),
     userId: v.id("users"),
     storageId: v.id("_storage"),
     name: v.string(),
     mimeType: v.string(),
+    extractedText: v.optional(v.string()),
+    extractionVersion: v.optional(v.number()),
   }).index("by_sessionId", ["sessionId"]),
+  responseVotes: defineTable({
+    sessionId: v.id("sessions"), responseKey: v.string(),
+    vote: v.union(v.literal("like"), v.literal("dislike")),
+    category: v.string(), version: v.number(),
+  }).index("by_response", ["sessionId", "responseKey"])
+    .index("by_sessionId", ["sessionId"]),
+  surveyReceipts: defineTable({ token: v.string(), expiresAt: v.number(), submitted: v.boolean() }).index("by_token", ["token"]),
+  feedbackTotals: defineTable({ key: v.string(), count: v.number() }).index("by_key", ["key"]),
 });

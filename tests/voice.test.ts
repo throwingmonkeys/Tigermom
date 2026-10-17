@@ -39,11 +39,50 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe("Hands-free conversation", () => {
+  it("replaces overlapping unfinished speech in newer browser result slots", async () => {
+    const f = fixture();
+    const mic = f.microphones[0];
+    mic.onresult?.({ results: [result("how", false)] });
+    mic.onresult?.({ resultIndex: 1, results: [result("how", false), result("how long", false)] });
+    mic.onresult?.({ resultIndex: 2, results: [result("how", false), result("how long", false), result("how long does childbirth take")] });
+    expect(f.getDraft()).toBe("how long does childbirth take");
+    await vi.advanceTimersByTimeAsync(VOICE_PAUSE_MS);
+    expect(f.onQuestion).toHaveBeenCalledExactlyOnceWith("how long does childbirth take");
+    f.voice.stop();
+  });
+
+  it("replaces cumulative final results without duplicating earlier words", () => {
+    const f = fixture();
+    f.microphones[0].onresult?.({ results: [result("very"), result("very helpful")] });
+    expect(f.getDraft()).toBe("very helpful");
+    f.voice.stop();
+  });
+  it("ignores interim results and replaces growing Android final results", async () => {
+    const f = fixture();
+    const mic = f.microphones[0];
+    mic.onresult?.({ results: [result("can", false)] });
+    expect(f.getDraft()).toBe("");
+    mic.onresult?.({ results: [result("can")] });
+    mic.onresult?.({ resultIndex: 1, results: [result("can"), result("can you")] });
+    mic.onresult?.({ resultIndex: 2, results: [result("can"), result("can you"), result("can you tell me about birth")] });
+    expect(f.getDraft()).toBe("can you tell me about birth");
+    await vi.advanceTimersByTimeAsync(VOICE_PAUSE_MS);
+    expect(f.onQuestion).toHaveBeenCalledExactlyOnceWith("can you tell me about birth");
+    f.voice.stop();
+  });
+
+  it("preserves intentional repetition within the latest final transcript", () => {
+    const f = fixture();
+    f.microphones[0].onresult?.({ results: [result("very very helpful")] });
+    expect(f.getDraft()).toBe("very very helpful");
+    f.voice.stop();
+  });
+
   it("keeps the full sentence across a browser stop and waits four seconds", async () => {
     const f = fixture();
     const first = f.microphones[0];
-    expect(first.continuous).toBe(true);
-    expect(first.interimResults).toBe(true);
+    expect(first.continuous).toBe(false);
+    expect(first.interimResults).toBe(false);
     first.onresult?.({ results: [result("My doctor mentioned induction")] });
     await vi.advanceTimersByTimeAsync(2000);
     first.onend?.();
@@ -93,8 +132,8 @@ describe("Hands-free conversation", () => {
     expect(f.cancelSpeech).not.toHaveBeenCalled();
     expect(f.onQuestion).not.toHaveBeenCalled();
     mic.onresult?.({ resultIndex: 1, results: [result("You can ask your doctor"), result("Wait, I have another question", false)] });
-    expect(f.cancelSpeech).toHaveBeenCalledTimes(1);
-    expect(f.getDraft()).toBe("Wait, I have another question");
+    expect(f.cancelSpeech).not.toHaveBeenCalled();
+    expect(f.getDraft()).toBe("");
     finishSpeaking();
     mic.onresult?.({ resultIndex: 1, results: [result("You can ask your doctor"), result("Wait, I have another question")] });
     await vi.advanceTimersByTimeAsync(VOICE_PAUSE_MS);

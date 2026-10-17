@@ -10,12 +10,19 @@
 
 import type * as aiLimits from "../aiLimits.js";
 import type * as auth from "../auth.js";
+import type * as citations from "../citations.js";
 import type * as conversation from "../conversation.js";
 import type * as evidence from "../evidence.js";
+import type * as feedback from "../feedback.js";
+import type * as feedbackData from "../feedbackData.js";
 import type * as http from "../http.js";
+import type * as purposeReview from "../purposeReview.js";
 import type * as reports from "../reports.js";
+import type * as searchQuestion from "../searchQuestion.js";
 import type * as sessions from "../sessions.js";
 import type * as settings from "../settings.js";
+import type * as survey from "../survey.js";
+import type * as urgent from "../urgent.js";
 
 import type {
   ApiFromModules,
@@ -26,12 +33,19 @@ import type {
 declare const fullApi: ApiFromModules<{
   aiLimits: typeof aiLimits;
   auth: typeof auth;
+  citations: typeof citations;
   conversation: typeof conversation;
   evidence: typeof evidence;
+  feedback: typeof feedback;
+  feedbackData: typeof feedbackData;
   http: typeof http;
+  purposeReview: typeof purposeReview;
   reports: typeof reports;
+  searchQuestion: typeof searchQuestion;
   sessions: typeof sessions;
   settings: typeof settings;
+  survey: typeof survey;
+  urgent: typeof urgent;
 }>;
 
 /**

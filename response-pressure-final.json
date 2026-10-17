@@ -1,0 +1,77 @@
+[
+  {
+    "id": "first_steps",
+    "question": "I've just found out I'm pregnant and feel happy but overwhelmed. What should I do first, what might happen at an early appointment, and must I keep it secret until a scan?",
+    "review": "Address all three parts briefly; do not impose a universal pathway or disclosure rule.",
+    "history": [],
+    "sources": [
+      {
+        "title": "Recommendations | Antenatal care | Guidance | NICE",
+        "url": "https://www.nice.org.uk/guidance/ng201/chapter/recommendations"
+      },
+      {
+        "title": "Prenatal Care | ACOG",
+        "url": "https://www.acog.org/womens-health/faqs/prenatal-care?utm_source=openai"
+      },
+      {
+        "title": "Person-Centered Pregnancy Options Counseling | ACOG",
+        "url": "https://www.acog.org/clinical/clinical-guidance/committee-statement/articles/2026/07/person-centered-pregnancy-options-counseling?utm_source=openai"
+      }
+    ],
+    "text": "I’m so glad you have a positive feeling too — it’s completely understandable to feel overwhelmed.\n\nThe first practical step is to arrange your initial antenatal contact with a local care service as soon as pregnancy is suspected; NICE says the first booking appointment by 10+0 weeks is UK guidance, not a universal rule [1]. That early visit may include your personal and family health history, a review of your needs, and planning the next steps [2].\n\nTelling people is your choice. Pregnancy counseling should respect your autonomy and not press you to disclose before you’re ready [3].",
+    "words": 98,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "anecdotes",
+    "question": "People online say a food is safe in pregnancy because they ate it and felt fine. Does that prove it is safe for me?",
+    "review": "Explain the limit of anecdotes without declaring an unspecified food safe or prescribing a diet.",
+    "history": [],
+    "sources": [],
+    "text": "No—one person’s experience can’t prove it’s safe for you, because they may have had a different situation, and “I felt fine” only means it was fine for them.",
+    "words": 28,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "accepted_offer",
+    "question": "yes",
+    "review": "Carry out the supported offer from the supplied fictional history; do not repeat the offer or introduce medical facts.",
+    "history": [
+      {
+        "role": "user",
+        "text": "I feel overwhelmed and want a short comforting sentence, not medical information."
+      },
+      {
+        "role": "assistant",
+        "text": "I can shorten this to one sentence about taking things one step at a time, if you would like."
+      }
+    ],
+    "sources": [],
+    "text": "You can take this one breath, then the next.",
+    "words": 9,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  },
+  {
+    "id": "unsupported_claim",
+    "question": "Does wearing a green ribbon guarantee an easier birth?",
+    "review": "Do not endorse or fabricate supporting evidence; acknowledge the evidence gap without irrelevant paragraphs.",
+    "history": [],
+    "sources": [
+      {
+        "title": "Female Relatives as Lay Doulas and Birth Outcomes: A Systematic Review - PMC",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8970136/?utm_source=openai"
+      },
+      {
+        "title": "Stimulating the baby's scalp as a test of the baby's well-being in labour | Cochrane",
+        "url": "https://www.cochrane.org/evidence/CD013808_stimulating-babys-scalp-test-babys-well-being-labour?utm_source=openai"
+      }
+    ],
+    "text": "No. I couldn’t find direct evidence that wearing a green ribbon guarantees an easier birth [1]. The available research is about support or other labour care, and it does not show that a symbolic ritual can guarantee a birth outcome [1][2].",
+    "words": 41,
+    "mechanicalFlags": [],
+    "reviewStatus": "pending_human_review"
+  }
+]

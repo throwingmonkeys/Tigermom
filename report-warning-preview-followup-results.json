@@ -1,0 +1,22 @@
+[
+  {
+    "name": "ordinary",
+    "first": {
+      "sources": [],
+      "text": ""
+    },
+    "followup": {
+      "sources": [],
+      "text": ""
+    },
+    "explanation": {
+      "sources": [],
+      "text": "I haven’t verified that warning in the readable report text. It was an app alert, not a medical assessment of your results. I’m sorry the earlier reply didn’t explain that."
+    },
+    "transcription": "FICTONIAL PRINTED REPORT - TEST DATA ONLY\n\nGestational sac seen within the uterus.\n\nEmbryo is visible. Cardiac activity is present.\n\nYolk sac is seen.\n\nLiquor is adequate.\n\nCervical canal is not dilated.\n\nPlease correlate clinically.",
+    "callsBefore": 0,
+    "callsAfterRead": 1,
+    "callsAfterFollowup": 1,
+    "pass": true
+  }
+]

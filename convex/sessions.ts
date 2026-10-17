@@ -35,6 +35,8 @@ async function erase(ctx: MutationCtx, sessionId: Id<"sessions">) {
     await ctx.storage.delete(report.storageId);
     await ctx.db.delete(report._id);
   }
+  const votes = await ctx.db.query("responseVotes").withIndex("by_sessionId", q => q.eq("sessionId", sessionId)).take(100);
+  for (const vote of votes) await ctx.db.delete(vote._id);
   await ctx.db.delete(sessionId);
 }
 export const begin = mutation({
@@ -75,15 +77,22 @@ export const heartbeat = mutation({
   },
 });
 export const finish = mutation({
-  args: { sessionId: v.id("sessions") },
+  args: { sessionId: v.id("sessions"), surveyToken: v.optional(v.string()) },
   returns: v.null(),
-  handler: async (ctx, { sessionId }) => {
+  handler: async (ctx, { sessionId, surveyToken }) => {
     const userId = await getAuthUserId(ctx);
     const session = await ctx.db.get(sessionId);
-    if (!session) return null;
-    if (!userId || session.userId !== userId)
+    if (!userId || (session && session.userId !== userId))
       throw new ConvexError("This conversation belongs to someone else.");
-    await erase(ctx, sessionId);
+    if (surveyToken) {
+      if (!/^[a-f0-9]{64}$/.test(surveyToken)) throw new ConvexError("Invalid feedback receipt.");
+      const existing = await ctx.db.query("surveyReceipts").withIndex("by_token", q => q.eq("token", surveyToken)).unique();
+      if (!existing) {
+        const receiptId = await ctx.db.insert("surveyReceipts", { token: surveyToken, expiresAt: Date.now() + 60 * 60_000, submitted: false });
+        await ctx.scheduler.runAfter(60 * 60_000, internal.survey.removeReceipt, { receiptId });
+      }
+    }
+    if (session) await erase(ctx, sessionId);
     return null;
   },
 });
@@ -112,13 +121,12 @@ export const claim = internalMutation({
     if (
       session.inFlight ||
       Date.now() - session.lastCallAt < 3000 ||
-      session.calls >= 30
+      session.calls >= 20
     )
       throw new ConvexError(
         "Please pause a moment, or start a new conversation if you have reached the session limit.",
       );
     await ctx.db.patch(sessionId, {
-      calls: session.calls + 1,
       lastCallAt: Date.now(),
       inFlight: true,
       expiresAt: Math.min(Date.now() + LEASE, session._creationTime + SESSION_LENGTH),
@@ -135,25 +143,8 @@ export const release = internalMutation({
     return null;
   },
 });
-export const files = internalQuery({
-  args: { sessionId: v.id("sessions") },
-  returns: v.array(
-    v.object({
-      storageId: v.id("_storage"),
-      mimeType: v.string(),
-      name: v.string(),
-    }),
-  ),
-  handler: async (ctx, { sessionId }) => {
-    await ownedSession(ctx, sessionId);
-    const reports = await ctx.db
-      .query("reports")
-      .withIndex("by_sessionId", (q) => q.eq("sessionId", sessionId))
-      .take(3);
-    return reports.map(({ storageId, mimeType, name }) => ({
-      storageId,
-      mimeType,
-      name,
-    }));
-  },
+// Lifecycle guard for text/voice work. This never reads or returns a report.
+export const assertActive = internalQuery({
+  args: { sessionId: v.id("sessions") }, returns: v.null(),
+  handler: async (ctx, { sessionId }) => { await ownedSession(ctx, sessionId); return null; },
 });

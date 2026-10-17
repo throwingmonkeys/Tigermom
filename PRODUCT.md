@@ -1,5 +1,8 @@
 # PRODUCT.md
 
+Current v1 scope (approved October 17, 2026): typed and spoken questions only. Report uploads, attached-report displays and report reading are outside v1 and parked for a later version. This supersedes older report/upload descriptions below. The welcome and privacy pages describe questions and conversation only. Medical safety, evidence, sources, ratings and session privacy remain in force.
+
+
 
 
 ## 1\. The job
@@ -91,13 +94,13 @@ Core flow for v1
 1. \[Exit the doctor appointment and fire up Tigermom]
 2. \[Landing page: See welcome message along with invitation to talk to Tigermom for free for 10m. Sees sample questions that she can ask Tigermom by tapping on a tile]
 3. \[Sees tiles of anonymized testimonials of other Tigermom’s]
-4. \[Taps on Button ‘Talk to Tigermom’ ]
+4. \[Uses the single question box: types and sends, or taps its microphone to start a flowing voice conversation. The private session starts quietly when needed.]
 5. \[Asks a question, receives a voice reply, follows with more questions and receives answers which summarize evidence from credible, relevant, curated sources in an empathetic, empowering, plainspeaking female voice ]
 6. \[Uploads doctor’s report]
 7. \[Asks additional questions till she understands exactly what the report says, what her choices are and is prepared to ask more incisive questions to her doctor on the next visit ]
-8. \[Taps on button ‘End conversation’]
+8. \[Taps on button ‘End conversation’; stopping the microphone only stops listening.]
 9. \[ Takes survey  to rate how useful the conversation was to her]
-10. \[Sees page which lists ‘Sources’]
+10. \[Returns home after optional feedback. Sources remain available beneath answers and through Our sources; no Sources visit is required.]
 
 End core flow for v1
 
@@ -134,7 +137,11 @@ First value (when they hear an answer to their first question): \[An evidence ba
 
 The smallest commitment we ask for: \[An upload of a doctor’s report]
 
-The worry it removes (from section 2): \[the fear of taking a decision by providing a balanced perspective based on evidence]
+The worry it removes (from section 2): \[Tigermom shares evidence that supports natural birth, and always tells her that her doctor makes the medical call.]
+- If she says she has been diagnosed with chronic hypertension, pre-existing diabetes, heart or kidney disease, a clotting disorder or placenta previa, Tigermom stops promoting natural birth, keeps explaining her report, provides her a balanced perspective, gives her questions for her doctor and points her back to her doctor.
+- For gestational diabetes, twins or age 35+, Tigermom provides a balanced perspective but urges the user to “please consult your provider to discuss what’s best for you”, helps formulate questions for the doctor but decides and recommends nothing.
+- The AI never judges medical risk from an uploaded report.
+- Tigermom never tells anyone they are low-risk or a good candidate.
 
 
 

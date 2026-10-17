@@ -1,0 +1,38 @@
+[
+  {
+    "question": "How long does childbirth take?",
+    "reply": {
+      "sources": [
+        {
+          "title": "Recommendations | Intrapartum care | Guidance | NICE",
+          "url": "https://www.nice.org.uk/guidance/ng235/chapter/Recommendations"
+        },
+        {
+          "title": "First and Second Stage Labor Management | ACOG",
+          "url": "https://www.acog.org/clinical/clinical-guidance/clinical-practice-guideline/articles/2024/01/first-and-second-stage-labor-management?utm_source=openai"
+        }
+      ],
+      "text": "Childbirth varies a lot, and the timing depends on the stage of labour. NICE says the established first stage starts with regular contractions and dilation from 4 cm; first labours average about 8 hours and are unlikely to last over 18 hours, while later labours average about 5 hours and are unlikely to last over 12 hours [1]. ACOG separates labour into first, second and third stages [2]."
+    }
+  },
+  {
+    "question": "And the second time?",
+    "reply": {
+      "sources": [
+        {
+          "title": "DRAFT FOR CONSULTATION",
+          "url": "https://www.nice.org.uk/guidance/GID-NG10360/documents/draft-guideline"
+        },
+        {
+          "title": "How to Tell When Labor Begins | ACOG",
+          "url": "https://www.acog.org/womens-health/faqs/how-to-tell-when-labor-begins?utm_source=openai"
+        },
+        {
+          "title": "Duration of spontaneous labour in ‘low-risk’ women with ‘normal’ perinatal outcomes: A systematic review - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5884320/?utm_source=openai"
+        }
+      ],
+      "text": "Yes — for a second or later labour, the first stage is usually shorter. NICE says the established first stage averages about 5 hours and is unlikely to last over 12 hours, compared with about 8 hours and up to 18 hours for a first labour [1]. ACOG gives a broader whole-labour estimate of 8–10 hours if you’ve given birth before, versus 12–18 hours for a first baby [2]."
+    }
+  }
+]

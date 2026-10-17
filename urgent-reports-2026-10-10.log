@@ -1,8 +1,0 @@
-{"check":"local PDF extraction","text":"MADE-UP REPORT: Printed note - fluid leaking."}
-{"check":"synthetic upload","type":"application/pdf","status":200,"result":{"id":"jx7ejdgxwxfy72dgcs3tmmyq0s8g0pv2"}}
-{"check":"PDF urgent check before answer","result":{"sources":[],"text":"If you have bleeding, severe pain, reduced baby movement or fluid leaking: This needs medical attention right away. Contact your doctor or hospital now. If you cannot reach them, please seek urgent medical help. Do not wait until your next appointment."},"status":"pass"}
-{"check":"PDF provider-off setup","availability":{"ai":false,"sms":false}}
-{"check":"PDF urgent check with AI switched off","result":{"sources":[],"text":"If you have bleeding, severe pain, reduced baby movement or fluid leaking: This needs medical attention right away. Contact your doctor or hospital now. If you cannot reach them, please seek urgent medical help. Do not wait until your next appointment."},"status":"pass"}
-{"cleanup":"AI_ENABLED restored to its original true value"}
-{"check":"synthetic upload","type":"image/jpeg","status":200,"result":{"id":"jx7e81jtse6qk5ntn4jayp4eys8g1wx8"}}
-{"check":"photo extracted text checked before answer","result":{"sources":[],"text":"If you have bleeding, severe pain, reduced baby movement or fluid leaking: This needs medical attention right away. Contact your doctor or hospital now. If you cannot reach them, please seek urgent medical help. Do not wait until your next appointment."},"status":"pass"}

@@ -19,8 +19,10 @@ const schema = { type: "object" as const, additionalProperties: false, propertie
   question: { type: "string" }, safeForSearch: { type: "boolean", description: "The prepared question contains no identifiers or private clinical details. True also when the original was already general and no removal was needed." }, intentPreserved: { type: "boolean" },
 }, required: ["question", "safeForSearch", "intentPreserved"] };
 export function hasPersonalIdentifiers(text: string): boolean {
+  const phone = [...text.matchAll(/\+?\d[\d ().-]{7,}\d/g)].some(([value]) =>
+    value.replace(/\D/g, "").length >= 8 && !/^\d{4}-\d{2}-\d{2}$/.test(value.trim()));
   return /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(text)
-    || /(?:\+?\d[\d ().-]{7,}\d)/.test(text)
+    || phone
     || /\b(?:patient\s+(?:record|id)|record\s*(?:id|number)?|passport|aadhaar|aadhar|pan|national\s+id)\s*(?:number|no\.?|:)?[\s:#-]+(?=[\p{L}\d-]*\d)[\p{L}\d-]+/iu.test(text)
     || /\b(?:(?:my|her|his)\s+name\s+is|patient\s+name\s*:)\s+[\p{L}][\p{L}'-]+/iu.test(text)
     || /\b\d+[A-Z]?\s+(?:[\p{L}]+\s+){1,4}(?:road|street|lane|avenue|nagar|colony|apartment|apartments|building|rd|st)\b/iu.test(text)

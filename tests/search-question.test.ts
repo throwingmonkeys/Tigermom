@@ -30,6 +30,8 @@ describe("Private contextual search preparation", () => {
     "What is a phone number used for in booking maternity care?",
     "What should a record of antenatal visits include?",
     "Why does a hospital ask for a patient ID number?",
+    "What does the general BMI range 18.5 - 24.9 mean?",
+    "What changed in the guidance dated 2026-10-18?",
   ])("does not mistake general educational wording for personal information: %s", question => {
     expect(acceptSearchQuestion(plan(question))).toBe(question);
   });

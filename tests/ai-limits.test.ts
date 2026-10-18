@@ -10,6 +10,31 @@ const modules = import.meta.glob("../convex/**/*.{ts,js}");
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 describe("AI budget", () => {
+  it.each(["session", "expired", "hourly", "inFlight"])("reports %s unavailability without disguising it as a provider failure", async cause => {
+    vi.stubEnv("OPENAI_API_KEY", "synthetic-test-placeholder");
+    const generate = vi.spyOn(Agent.prototype, "generateText");
+    const t = convexTest(schema, modules); rateLimiter.register(t);
+    const userId = await t.run(ctx => ctx.db.insert("users", {}));
+    const owner = t.withIdentity({ subject: `${userId}|session` });
+    const sessionId = await owner.mutation(api.sessions.begin, {});
+    await t.run(async ctx => {
+      if (cause === "session") await ctx.db.patch(sessionId, { calls: 20 });
+      if (cause === "expired") await ctx.db.patch(sessionId, { expiresAt: Date.now() - 1 });
+      if (cause === "inFlight") await ctx.db.patch(sessionId, { inFlight: true });
+      if (cause === "hourly") await ctx.db.insert("aiBudget", { key: "global", calls: Array(100).fill(Date.now()) });
+    });
+    const reply = await owner.action(api.conversation.reply, { sessionId, text: "What does labour mean?", history: [] });
+    expect(reply.text).not.toContain("Busy right now");
+    expect(reply.sources).toEqual([]);
+    expect(generate).not.toHaveBeenCalled();
+    if (cause === "session" || cause === "expired") expect(reply.text).toBe("Your session has ended. You can start another session now.");
+    if (cause === "inFlight") expect(reply.text).toContain("previous question is still being answered");
+    if (cause === "hourly") {
+      expect(reply.text).toContain("hourly allowance is used up");
+      expect(reply.text).toContain("IST (Asia/Kolkata)");
+      expect(reply.text).not.toContain("[actual");
+    }
+  });
   it("includes the approved purpose and keeps the safety boundaries above the slant", () => {
     expect(instructions).toContain("To prepare and support pregnant women with the understanding and evidence they need so that they can achieve the natural birth they desire.");
     expect(instructions).toContain("subordinate to every safety boundary");
@@ -82,7 +107,7 @@ describe("AI budget", () => {
   it("shows only verified source links for a question without a doctor's report", async () => {
     vi.stubEnv("OPENAI_API_KEY", "synthetic-test-placeholder");
     vi.stubEnv("AI_ENABLED", "true");
-    const generate = vi.spyOn(Agent.prototype, "generateText").mockResolvedValueOnce({ text: JSON.stringify({ question: "What does labour induction mean?", privateDetailsRemoved: true, intentPreserved: true }), finishReason: "stop" } as never).mockResolvedValueOnce({
+    const generate = vi.spyOn(Agent.prototype, "generateText").mockResolvedValueOnce({ text: JSON.stringify({ question: "What does labour induction mean?", safeForSearch: true, intentPreserved: true }), finishReason: "stop" } as never).mockResolvedValueOnce({
       text: "You can ask which options fit your situation.",
       sources: [
         { sourceType: "url", id: "1", title: "ACOG questions", url: "https://www.acog.org/womens-health" },

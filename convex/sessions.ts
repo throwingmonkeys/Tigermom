@@ -22,7 +22,7 @@ export async function ownedSession(
     session._creationTime + SESSION_LENGTH <= Date.now()
   )
     throw new ConvexError(
-      "Your session has ended. Please start a new conversation.",
+      "Your session has ended. You can start another session now.",
     );
   return session;
 }
@@ -118,14 +118,12 @@ export const claim = internalMutation({
   returns: v.null(),
   handler: async (ctx, { sessionId }) => {
     const session = await ownedSession(ctx, sessionId);
-    if (
-      session.inFlight ||
-      Date.now() - session.lastCallAt < 3000 ||
-      session.calls >= 20
-    )
-      throw new ConvexError(
-        "Please pause a moment, or start a new conversation if you have reached the session limit.",
-      );
+    if (session.calls >= 20)
+      throw new ConvexError("Your session has ended. You can start another session now.");
+    if (session.inFlight)
+      throw new ConvexError("Your previous question is still being answered. Please wait for its reply.");
+    if (Date.now() - session.lastCallAt < 3000)
+      throw new ConvexError("Please wait three seconds before sending another question.");
     await ctx.db.patch(sessionId, {
       lastCallAt: Date.now(),
       inFlight: true,

@@ -198,8 +198,31 @@ export default function App() {
     sessionRef.current = sessionId;
   }, [sessionId]);
   useEffect(() => {
-    bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    // Scroll only the transcript. scrollIntoView also moved the outer page,
+    // leaving the composer below the phone's visible screen.
+    const transcript = bottom.current?.parentElement;
+    if (transcript) transcript.scrollTop = transcript.scrollHeight;
   }, [messages, busy]);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const resize = () => {
+      document.documentElement.style.setProperty("--visible-height", `${viewport?.height ?? window.innerHeight}px`);
+      document.documentElement.style.setProperty("--visible-top", `${viewport?.offsetTop ?? 0}px`);
+      const transcript = bottom.current?.parentElement;
+      if (transcript) transcript.scrollTop = transcript.scrollHeight;
+    };
+    resize();
+    viewport?.addEventListener("resize", resize);
+    viewport?.addEventListener("scroll", resize);
+    window.addEventListener("resize", resize);
+    return () => {
+      viewport?.removeEventListener("resize", resize);
+      viewport?.removeEventListener("scroll", resize);
+      window.removeEventListener("resize", resize);
+      document.documentElement.style.removeProperty("--visible-height");
+      document.documentElement.style.removeProperty("--visible-top");
+    };
+  }, []);
   useEffect(() => {
     // Do not store conversation in browser storage. Explicit end deletes
     // server data; an expiring server lease covers closed tabs and network loss.
@@ -531,7 +554,7 @@ export default function App() {
     setReason("");
   }
   return (
-    <div className={`app-shell panel-${panel}`}>
+    <div className={`app-shell panel-${panel}${active && !info ? " conversation-open" : ""}`}>
       <aside className={`sidebar ${menu ? "open" : ""}`}>
         <a
           href="#"
@@ -755,8 +778,10 @@ export default function App() {
                               <Mic size={19} />
                             )}
                           </button>
+                      <label className="question-label" htmlFor="question">{messages.some(m => m.role === "assistant") ? "Ask a follow-up question" : "Your question"}</label>
                       <form className="composer" onSubmit={send}>
                         <textarea
+                          id="question"
                           aria-label="Your question"
                           placeholder="What do you have in mind?"
                           value={draft}
@@ -769,7 +794,6 @@ export default function App() {
                             }
                           }}
                           rows={2}
-                          disabled={busy}
                         />
                         <div className="composer-controls">
                           <button
@@ -778,6 +802,7 @@ export default function App() {
                             disabled={!draft.trim() || (!mentionsUrgentSign(draft) && (busy || (Boolean(sessionId) && expired) || !availability?.ai))}
                           >
                             <Send size={17} />
+                            <span>Send</span>
                           </button>
                         </div>
                       </form>

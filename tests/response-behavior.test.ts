@@ -30,7 +30,7 @@ describe("Lessons from fictional pressure tests", () => {
     vi.stubEnv("AI_ENABLED", "true");
     const answer = "I'm sorry I made that unclear. Antenatal simply means during pregnancy [1].";
     const generate = vi.spyOn(Agent.prototype, "generateText")
-      .mockResolvedValueOnce({ text: JSON.stringify({ question: "What is the definition of antenatal?", privateDetailsRemoved: true, intentPreserved: true }), finishReason: "stop" } as never)
+      .mockResolvedValueOnce({ text: JSON.stringify({ question: "What is the definition of antenatal?", safeForSearch: true, intentPreserved: true }), finishReason: "stop" } as never)
       .mockResolvedValueOnce({ text: "Antenatal means during pregnancy.", sources: [{ sourceType: "url", url: "https://www.who.int/publications/i/item/9789241549912", title: "WHO antenatal care" }] } as never)
       .mockResolvedValueOnce({ text: answer, finishReason: "stop" } as never)
       .mockResolvedValueOnce({ text: JSON.stringify({ decision: "approve", text: answer, checks: { purpose: true, perspective: true, relevance: true, safety: true, evidence: true, tone: true } }), finishReason: "stop" } as never);
@@ -97,7 +97,7 @@ describe("Lessons from fictional pressure tests", () => {
     vi.stubEnv("OPENAI_API_KEY", "synthetic-test-placeholder");
     vi.stubEnv("AI_ENABLED", "true");
     vi.spyOn(Agent.prototype, "generateText")
-      .mockResolvedValueOnce({ text: JSON.stringify({ question: "What are the birth options in gestational diabetes?", privateDetailsRemoved: true, intentPreserved: true }), finishReason: "stop" } as never)
+      .mockResolvedValueOnce({ text: JSON.stringify({ question: "What are the birth options in gestational diabetes?", safeForSearch: true, intentPreserved: true }), finishReason: "stop" } as never)
       .mockResolvedValueOnce({ text: "Checked evidence.", sources: [{ sourceType: "url", url: "https://www.nice.org.uk/guidance/ng3", title: "NICE" }] } as never)
       .mockResolvedValueOnce({ text: "Different options depend on the circumstances [1].", finishReason: "stop" } as never)
       .mockResolvedValueOnce({ text: JSON.stringify({ decision: "approve", text: "Different options depend on the circumstances [1].\n\n" + providerConsultation, checks: { purpose: true, perspective: true, relevance: true, safety: true, evidence: true, tone: true } }), finishReason: "stop" } as never);
@@ -112,7 +112,7 @@ describe("Lessons from fictional pressure tests", () => {
   it("rejects unrelated research as support for a symbolic birth guarantee", async () => {
     vi.stubEnv("OPENAI_API_KEY", "synthetic-test-placeholder");
     vi.stubEnv("AI_ENABLED", "true");
-    const generate = vi.spyOn(Agent.prototype, "generateText").mockResolvedValueOnce({ text: JSON.stringify({ question: "Do symbolic rituals guarantee easier birth?", privateDetailsRemoved: true, intentPreserved: true }), finishReason: "stop" } as never).mockResolvedValue({
+    const generate = vi.spyOn(Agent.prototype, "generateText").mockResolvedValueOnce({ text: JSON.stringify({ question: "Do symbolic rituals guarantee easier birth?", safeForSearch: true, intentPreserved: true }), finishReason: "stop" } as never).mockResolvedValue({
       text: "A study of support during labour.",
       sources: [{ sourceType: "url", url: "https://www.cochrane.org/evidence/labour-support", title: "Labour support" }],
     } as never);

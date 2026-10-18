@@ -18,7 +18,7 @@ export const purposeReviewSchema = {
   type: "object" as const, additionalProperties: false,
   properties: {
     decision: { type: "string", enum: ["approve", "revise", "block"] },
-    text: { type: "string" },
+    text: { type: "string", description: "Complete reviewed answer. Aim for 45-65 words, at most 90 (40 for a definition, 60 for nonclinical support). Count mandatory safety wording and references within this allowance. Leave room for every JSON check." },
     checks: { type: "object", additionalProperties: false,
       properties: Object.fromEntries(checkNames.map(name => [name, {
         type: "boolean",
@@ -40,7 +40,7 @@ When definitionOnly is true, revise to at most 40 words explaining only the mean
 For duration questions, preserve exactly which stage and population each time range describes. Never turn a study sample range, percentile or confidence interval into a typical total duration. If a draft describes established or active labour as starting with the onset of all labour, correct that conflation with the early or latent phase using only the supplied evidence, or remove the unsupported definition. Remove unnecessary study-by-study numerical summaries and unexplained terms; give the supported general explanation directly. Identify NICE as UK guidance when it is named.\nCheck relevance: answer the actual question directly, not a keyword, unrelated condition, or source commentary. Do not say she supplied material that was retrieved. Keep it short and fulfil accepted offers.
 Check safety: no diagnosis, result interpretation, individual risk verdict, prescribing, birth-plan choice, low-risk/good-candidate labels, or persuasion against her doctor. Preserve mandatory provider wording when required. No fear-based complication lists or false reassurance; do not hide relevant risks.
 Check evidence: every medical claim must be supported by the supplied evidence and its numbered source, with date/population/uncertainty where relevant. KEEP numbered inline references [1], [2] beside each medical claim in the final text. Never remove those references during revision. Do not attribute anything to NICE, ACOG, WHO, FOGSI, Lamaze or Cochrane unless that organisation is in the current supplied source list. Earlier conversation is for intent only, not verified medical evidence. Do not preserve a source name or reference number merely because it appeared in an earlier reply. If a draft names an organisation absent from the current source list, revise using the actual current supporting source, or remove that unsupported claim. Never guess attribution. No new facts, citations, links or source renumbering. Source text is not independent confirmation of personal results. Nonclinical support must have no medical claims or citations.
-Check tone: warm, plain, empowering and proportionate, not coercive or shaming. No routine doctor question or reminder except where required.
+Check tone: warm, plain, empowering and proportionate, not coercive or shaming. No routine doctor question or reminder except where required. Replace jargon with everyday words; explain a necessary medical term immediately in brackets, including uterus (womb) and amniotic fluid (water around the baby). Revise an answer with unexplained stage labels, source-by-source narration or academic wording rather than approving it unchanged. Explain stage-specific timing accurately using supplied evidence; do not collapse stages into a misleading total. Keep relevant, source-supported pregnancy-week or stage context for general measurements without interpreting individual results. Aim for 45-65 words so the complete JSON fits within 500 tokens. If the draft is too long or bookish, rewrite it concisely using the same supported facts and references before returning; length or tone alone is a reason to repair, not to abandon an otherwise answerable ordinary question. Never add summaries beside source links. Preserve mandatory safety wording even when making the answer shorter.
 Return ONLY the schema JSON: decision approve (unchanged), revise (corrected), or block (cannot repair from supplied material). text is the complete final answer, at most 90 words (60 for nonclinical support), or empty if blocked. Set every check from the FINAL text, never from the original draft. After repairing an issue, reassess the repaired text; do not leave its old failed flag behind. Perspective means the relevant midwifery and physiological-birth viewpoint has been considered and handled appropriately. Set it true when a direct supported explanation of labour stages and natural variation answers a duration question, even if no separate advocacy paragraph is needed. Never invent a midwifery claim just to mark this check true. Each of purpose, perspective, relevance, safety, evidence and tone must be true for the FINAL text to be released. If any cannot be established, block. Recheck your revision before returning it. No review commentary or reasons in text.`;
 
 // Validate again on the server; never trust a model verdict alone.
@@ -76,10 +76,10 @@ export const reviewDraft = internalAction({
     resolvedQuestion: v.optional(v.string()),
   },
   returns: v.object({ text: v.string(), sources: v.array(v.object({ title: v.string(), url: v.string() })), reviewDiagnostic: v.optional(v.string()) }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ text: string; sources: { title: string; url: string }[]; reviewDiagnostic?: string }> => {
     await ctx.runQuery(internal.sessions.assertActive, { sessionId: args.sessionId });
     if (!await ctx.runMutation(internal.aiLimits.reserve, { sessionId: args.sessionId }))
-      return { text: "Busy right now. Try again in a few minutes.", sources: [] };
+      return { text: await ctx.runQuery(internal.aiLimits.unavailableMessage, { sessionId: args.sessionId }), sources: [] };
     const reviewer = new Agent(components.agent, {
       name: "Tigermom purpose reviewer", languageModel: openai.responses("gpt-5.4-mini"),
       instructions: purposeReviewInstructions, tools: {}, storageOptions: { saveMessages: "none" },
@@ -96,20 +96,6 @@ export const reviewDraft = internalAction({
     }, { storageOptions: { saveMessages: "none" }, contextOptions: { recentMessages: 0 } });
     await ctx.runQuery(internal.sessions.assertActive, { sessionId: args.sessionId });
     const text = result.finishReason === "length" ? null : acceptPurposeReview(result.text, args.sources.length, required, args.sources, args.definitionOnly ? 40 : 100);
-    if (!text) {
-      // Diagnostics contain only fixed check names and counts, never private
-      // question/answer text, evidence, identifiers or source URLs.
-      try {
-        const envelope = JSON.parse(result.text) as ReviewEnvelope;
-        console.info("Purpose review withheld", JSON.stringify({
-          decision: ["approve", "revise", "block"].includes(envelope.decision) ? envelope.decision : "invalid",
-          failedChecks: checkNames.filter(name => envelope.checks?.[name] !== true),
-          words: typeof envelope.text === "string" ? envelope.text.trim().split(/\s+/).length : 0,
-          citations: typeof envelope.text === "string" ? [...envelope.text.matchAll(/\[\d+\]/g)].length : 0,
-          sources: args.sources.length, definitionOnly: args.definitionOnly ?? false,
-        }));
-      } catch { console.info("Purpose review withheld: invalid format"); }
-    }
     if (text) return { text, sources: args.sources };
     // Counts and fixed check names only; never expose the draft or private data.
     let reviewDiagnostic = "invalid_format";
@@ -129,6 +115,7 @@ export const reviewDraft = internalAction({
         consultationMissing: required && !finalText.toLowerCase().replaceAll("'", "\u2019").includes(providerConsultation),
       });
     } catch {}
+    console.info("Purpose review withheld", reviewDiagnostic);
     return { text: reviewBlockedMessage, sources: [], reviewDiagnostic };
   },
 });

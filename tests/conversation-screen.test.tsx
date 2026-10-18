@@ -70,6 +70,22 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); delete window.SpeechRecognition; });
 describe("Conversation screens", () => {
+  it.each(["A short answer [1].", "A longer explanation with everyday words. ".repeat(30) + "[1]."])("keeps a labelled, usable follow-up box after an answer: %s", async answer => {
+    state.authenticated = true;
+    state.reply.mockResolvedValueOnce({ text: answer, sources: [{ title: "ACOG", url: "https://www.acog.org/womens-health" }] });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByRole("textbox", { name: "Your question" }), "Explain birth preparation");
+    await user.click(screen.getByRole("button", { name: "Send question" }));
+    await screen.findByText("Ask a follow-up question");
+    expect(screen.getByRole("textbox", { name: "Your question" }).hasAttribute("disabled")).toBe(false);
+    expect(screen.getByRole("button", { name: "Send question" }).textContent).toContain("Send");
+    await user.click(screen.getByRole("button", { name: /Read aloud/ }));
+    await user.type(screen.getByRole("textbox", { name: "Your question" }), "And what does that mean?");
+    expect((screen.getByRole("textbox", { name: "Your question" }) as HTMLTextAreaElement).value).toBe("And what does that mean?");
+    expect(screen.getByRole("button", { name: "Send question" }).hasAttribute("disabled")).toBe(false);
+    expect(screen.getByRole("link", { name: /\[1\] ACOG/ }).getAttribute("href")).toBe("https://www.acog.org/womens-health");
+  });
   it("offers questions only, without an upload control or report starter", () => {
     render(<App />);
     expect(screen.queryByRole("button", { name: "Upload report" })).toBeNull();
